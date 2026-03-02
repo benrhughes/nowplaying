@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bandcamp to Mastodon</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Bandcamp to Mastodon</h1>
+      <div id="auth-buttons">
+        <a id="login-btn" href="/auth/login" class="btn btn-primary">Login with Mastodon</a>
+        <a id="logout-btn" href="/auth/logout" class="btn btn-secondary" style="display:none;">Logout</a>
+        <span id="logged-in-text" style="display:none;">Logged in to Mastodon</span>
+      </div>
+    </header>
+
+    <main id="app-content">
+      <!-- Login Prompt -->
+      <div id="login-prompt-card" class="card">
+        <div class="login-prompt">
+          <p>You need to authenticate with Mastodon to use this tool.</p>
+          <a href="/auth/login" class="btn btn-primary">Login with Mastodon</a>
+        </div>
+      </div>
+
+      <!-- URL Form -->
+      <div id="form-card" class="card" style="display:none;">
+        <h2>Paste Bandcamp URL</h2>
+        <form id="scrape-form">
+          <div class="form-group">
+            <label for="url">Bandcamp Album URL</label>
+            <input 
+              type="url" 
+              id="url" 
+              name="url" 
+              placeholder="https://artist.bandcamp.com/album/..." 
+              required
+            >
+          </div>
+          <button type="submit" class="btn btn-primary">Fetch Album Info</button>
+        </form>
+        <div id="scrape-message"></div>
+      </div>
+
+      <!-- Preview Section -->
+      <div id="preview-card" class="card" style="display:none;">
+        <h2>Preview & Edit</h2>
+        
+        <div class="preview-section">
+          <img id="preview-image" src="" alt="Album cover" class="preview-image" style="display:none;">
+          <p>
+            <strong>Artist:</strong>
+            <input type="text" id="edit-artist" value="">
+          </p>
+          <p>
+            <strong>Album:</strong>
+            <input type="text" id="edit-album" value="">
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label for="post-text">Post Text</label>
+          <textarea id="post-text"></textarea>
+          <small>Post text is automatically generated from artist/album/URL. Edit as needed.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="alt-text">Alt Text (for image)</label>
+          <input type="text" id="alt-text" value="" placeholder="Describe the image for accessibility">
+        </div>
+
+        <div class="preview-section">
+          <h3>Preview</h3>
+          <div class="preview-text" id="final-preview"></div>
+        </div>
+
+        <div class="button-group">
+          <button id="update-preview-btn" class="btn btn-primary">Update Preview</button>
+          <button id="post-btn" class="btn btn-success">Post to Mastodon</button>
+          <button id="back-btn" class="btn">Back</button>
+        </div>
+        <div id="post-message"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

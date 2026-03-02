@@ -1,0 +1,41 @@
+services:
+  bcmasto:
+    build: .
+    container_name: bcmasto
+    ports:
+      - "3000:3000"
+    environment:
+      - MASTODON_INSTANCE=${MASTODON_INSTANCE:-https://mastodon.social}
+      - MASTODON_CLIENT_ID=${MASTODON_CLIENT_ID}
+      - MASTODON_CLIENT_SECRET=${MASTODON_CLIENT_SECRET}
+      - REDIRECT_URI=${REDIRECT_URI:-http://localhost:3000/auth/callback}
+      - PORT=3000
+      - NODE_ENV=${NODE_ENV:-production}
+      - SESSION_SECRET=${SESSION_SECRET}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# Optional: Uncomment to run Caddy alongside
+# services:
+#   caddy:
+#     image: caddy:latest
+#     container_name: caddy
+#     ports:
+#       - "80:80"
+#       - "443:443"
+#     volumes:
+#       - ./Caddyfile:/etc/caddy/Caddyfile
+#       - caddy_data:/data
+#       - caddy_config:/config
+#     depends_on:
+#       - bcmasto
+#     restart: unless-stopped
+#
+# volumes:
+#   caddy_data:
+#   caddy_config:

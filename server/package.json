@@ -1,0 +1,22 @@
+{
+  "name": "bcmasto",
+  "version": "1.0.0",
+  "description": "Bandcamp to Mastodon poster",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "express-session": "^1.17.3",
+    "form-data": "^4.0.0"
+  }
+}
