@@ -17,12 +17,7 @@ RUN dotnet restore bcmasto.sln
 # Copy the rest of the source code
 COPY src/ .
 
-# Run tests if requested (skipped by default to avoid analyzer package issues in some build contexts)
-RUN if [ "$RUN_TESTS" = "true" ]; then \
-    dotnet test bcmasto.tests/bcmasto.tests.csproj --no-restore --verbosity minimal /p:RunAnalyzers=false; \
-    else \
-    echo "Skipping tests (RUN_TESTS=false)"; \
-    fi
+RUN dotnet test bcmasto.tests/bcmasto.tests.csproj --no-restore --verbosity minimal /p:RunAnalyzers=false
 
 # Build the application
 RUN cd bcmasto && dotnet build -c Release --no-restore
