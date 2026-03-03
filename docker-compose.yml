@@ -1,26 +1,36 @@
+version: '3.8'
+
 services:
   bcmasto:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: bcmasto
     ports:
-      - "3000:3000"
+      - "5000:5000"
     environment:
-      - MASTODON_INSTANCE=${MASTODON_INSTANCE:-https://mastodon.social}
-      - MASTODON_CLIENT_ID=${MASTODON_CLIENT_ID}
-      - MASTODON_CLIENT_SECRET=${MASTODON_CLIENT_SECRET}
-      - REDIRECT_URI=${REDIRECT_URI:-http://localhost:3000/auth/callback}
-      - PORT=3000
-      - NODE_ENV=${NODE_ENV:-production}
-      - SESSION_SECRET=${SESSION_SECRET}
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+      - PORT=5000
+      # Set your Mastodon instance redirect URI (update for your domain)
+      - REDIRECT_URI=http://localhost:5000/auth/callback
+      # Use a strong session secret in production - change this!
+      - SESSION_SECRET=${SESSION_SECRET:-change-this-to-a-strong-random-secret}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/status"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/status"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - bcmasto-network
 
-# Optional: Uncomment to run Caddy alongside
+networks:
+  bcmasto-network:
+    driver: bridge
+
+# Optional: Uncomment to run Caddy reverse proxy for HTTPS
 # services:
 #   caddy:
 #     image: caddy:latest

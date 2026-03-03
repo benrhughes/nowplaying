@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+
+# Build outputs
+bin/
+obj/
+.vs/
+.vscode/
+
+# Node
+node_modules/
+
+# Tests
+*.trx
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+
+# Docker
+docker-compose.yml
+Dockerfile*
+.dockerignore
