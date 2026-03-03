@@ -13,7 +13,7 @@ public class MastodonServiceTests
     private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
     private readonly Mock<ILogger<MastodonService>> _loggerMock;
     private readonly MastodonService _service;
-    private const string RedirectUri = "http://localhost:5000/auth/callback";
+    private const string RedirectUri = "http://localhost:4444/auth/callback";
     private const string Instance = "https://mastodon.social";
 
     public MastodonServiceTests()

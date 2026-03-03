@@ -50,7 +50,7 @@ public static class AuthEndpoints
 
         try
         {
-            var redirectUri = context.Session.GetString("redirectUri") ?? "http://localhost:5000/auth/callback";
+            var redirectUri = context.Session.GetString("redirectUri") ?? "http://localhost:4444/auth/callback";
             var accessToken = await mastodonService.GetAccessTokenAsync(instance, clientId, clientSecret, code, redirectUri);
             context.Session.SetString("accessToken", accessToken);
 

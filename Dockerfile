@@ -33,17 +33,14 @@ WORKDIR /app
 # Copy published application
 COPY --from=build /app/publish .
 
-# Copy client files to wwwroot
-COPY client/ wwwroot/
-
 # Create non-root user for security
 RUN useradd -m -u 10001 appuser && \
     chown -R appuser:appuser /app
 USER appuser
 
-EXPOSE 5000
+EXPOSE 4444
 
-ENV ASPNETCORE_URLS=http://+:5000
+ENV ASPNETCORE_URLS=http://+:4444
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 ENTRYPOINT ["dotnet", "BcMasto.dll"]

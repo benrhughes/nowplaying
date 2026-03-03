@@ -66,7 +66,7 @@ public class AuthEndpointsTests
     public async Task Callback_WithValidCode_ReturnsResult()
     {
         // Arrange
-        _mastodonServiceMock.Setup(m => m.GetAccessTokenAsync("mastodon.social", "client-id", "client-secret", "auth-code", "http://localhost:5000/auth/callback"))
+        _mastodonServiceMock.Setup(m => m.GetAccessTokenAsync("mastodon.social", "client-id", "client-secret", "auth-code", "http://localhost:4444/auth/callback"))
             .ReturnsAsync("access-token");
 
         // Act

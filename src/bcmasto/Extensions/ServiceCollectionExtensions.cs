@@ -6,7 +6,7 @@ namespace BcMasto.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddBcMastoServices(this IServiceCollection services, AppConfig config)
+    public static IServiceCollection AddServices(this IServiceCollection services, AppConfig config)
     {
         services.AddDistributedMemoryCache();
         
@@ -37,7 +37,7 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static WebApplication MapBcMastoEndpoints(this WebApplication app)
+    public static WebApplication MapEndpoints(this WebApplication app)
     {
         var authGroup = app.MapGroup("/auth")
             .WithTags("Authentication");
@@ -54,6 +54,13 @@ public static class ServiceCollectionExtensions
         apiGroup.MapPost("/scrape", ApiEndpoints.Scrape);
         apiGroup.MapPost("/post", ApiEndpoints.Post);
 
+        // Serve index.html for root
+        app.MapGet("/", context =>
+        {
+            context.Response.ContentType = "text/html";
+            return context.Response.SendFileAsync(
+                Path.Combine(app.Environment.WebRootPath, "index.html"));
+        });
         return app;
     }
 }

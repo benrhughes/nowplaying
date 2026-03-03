@@ -12,8 +12,8 @@ public class AppConfigTests
         var config = new AppConfig();
 
         // Assert
-        Assert.Equal(5000, config.Port);
-        Assert.Equal("http://localhost:5000/auth/callback", config.RedirectUri);
+        Assert.Equal(4444, config.Port);
+        Assert.Equal("http://localhost:4444/auth/callback", config.RedirectUri);
         Assert.Equal("dev-secret-change-in-production", config.SessionSecret);
     }
 

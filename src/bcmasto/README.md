@@ -22,7 +22,7 @@ dotnet build
 dotnet run
 ```
 
-The server will start on `http://localhost:5000` by default.
+The server will start on `http://localhost:4444` by default.
 
 ### Run with custom port and redirect URI
 
@@ -32,8 +32,8 @@ PORT=5001 REDIRECT_URI=http://localhost:5001/auth/callback dotnet run
 
 ## Environment Variables
 
-- `PORT` - Server port (default: 5000)
-- `REDIRECT_URI` - OAuth redirect URI (default: http://localhost:5000/auth/callback)
+- `PORT` - Server port (default: 4444)
+- `REDIRECT_URI` - OAuth redirect URI (default: http://localhost:4444/auth/callback)
 - `SESSION_SECRET` - Session encryption secret (default: dev-secret-change-in-production)
 - `ASPNETCORE_ENVIRONMENT` - Environment (Development/Production)
 
@@ -98,8 +98,8 @@ npm run dev
 ### Terminal 2 - C# version
 ```bash
 cd csharp-server
-PORT=5000 dotnet run
-# Runs on http://localhost:5000
+PORT=4444 dotnet run
+# Runs on http://localhost:4444
 ```
 
 Then compare request/response behavior, performance, and implementation styles.

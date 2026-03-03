@@ -24,7 +24,7 @@ public class ApiEndpointsTests
         _httpClientFactoryMock = new Mock<IHttpClientFactory>();
         _httpContextMock = new Mock<HttpContext>();
         _sessionMock = new Mock<ISession>();
-        _config = new AppConfig { RedirectUri = "http://localhost:5000/auth/callback" };
+        _config = new AppConfig { RedirectUri = "http://localhost:4444/auth/callback" };
 
         _httpContextMock.Setup(h => h.Session).Returns(_sessionMock.Object);
     }

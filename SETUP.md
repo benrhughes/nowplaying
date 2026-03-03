@@ -2,24 +2,13 @@
 
 This guide walks you through setting up and running the Bandcamp to Mastodon poster.
 
-## Step 1: Register Your Mastodon Application
+## Key Feature: Dynamic Instance Registration
 
-Before running the app, you need to register it with your Mastodon instance.
+The app supports dynamic Mastodon instance registration. You select your instance when using the app, and it automatically registers with that instance. 
 
-1. Log into your Mastodon instance (e.g., mastodon.social)
-2. Go to **Preferences** → **Development** → **New Application**
-3. Fill in the form:
-   - **Application name**: `Bandcamp to Mastodon`
-   - **Redirect URIs**: This depends on your setup:
-     - **Local development**: `http://localhost:3000/auth/callback`
-     - **With Caddy**: `https://your-domain.com/auth/callback` (replace with your actual domain)
-   - **Scopes**: Select these two:
-     - `write:media` (to upload images)
-     - `write:statuses` (to create posts)
-4. Click **Submit**
-5. Copy the **Client ID** and **Client Secret** (you'll need these next)
+## Step 1: Create Your Configuration
 
-## Step 2: Create Your .env File
+Create a `.env` file with your deployment settings:
 
 1. Copy the example environment file:
    ```bash
@@ -28,11 +17,9 @@ Before running the app, you need to register it with your Mastodon instance.
 
 2. Edit `.env` and fill in your values:
    ```
-   MASTODON_INSTANCE=https://mastodon.social
-   MASTODON_CLIENT_ID=your_client_id_here
-   MASTODON_CLIENT_SECRET=your_client_secret_here
-   REDIRECT_URI=http://localhost:3000/auth/callback
+   REDIRECT_URI=http://localhost:4444/auth/callback
    SESSION_SECRET=generate-a-random-secret-here
+   PORT=4444
    ```
 
    For `SESSION_SECRET`, you can generate a random string with:
@@ -40,101 +27,201 @@ Before running the app, you need to register it with your Mastodon instance.
    openssl rand -base64 32
    ```
 
-3. Make sure `REDIRECT_URI` exactly matches what you registered in Mastodon!
+3. The `REDIRECT_URI` will be used when registering with your chosen Mastodon instance in the app. Update it for production deployments.
 
-## Step 3: Build the Docker Image
+## Step 2: Prerequisites
 
+### For Local .NET Development
+- .NET 10.0 SDK
+- Install from [dotnet.microsoft.com](https://dotnet.microsoft.com/download)
+
+### For Docker
+- Docker
+- Docker Compose (optional, but recommended)
+
+## Step 3: Build the Application
+
+### Option A: Local .NET Development
+
+Build the project:
+```bash
+cd src
+dotnet build
+```
+
+Run the application:
+```bash
+cd bcmasto
+dotnet run
+```
+
+The app will start on `http://localhost:4444`
+
+### Option B: Docker
+
+Build the Docker image:
 ```bash
 docker build -t bcmasto .
 ```
 
-## Step 4a: Run with Docker (Simple)
+## Step 4: Run the Application
+
+### Option A: Local .NET Development
+
+```bash
+cd src/bcmasto
+dotnet run
+```
+
+Access the app at `http://localhost:4444`
+
+### Option B: Docker (Simple)
 
 For local testing:
 
 ```bash
 docker run -d \
   --name bcmasto \
-  -p 3000:3000 \
+  -p 4444:4444 \
   --env-file .env \
   bcmasto
 ```
 
-Access the app at `http://localhost:3000`
+Access the app at `http://localhost:4444`
 
-## Step 4b: Run with Docker Compose
+### Option C: Docker Compose
 
-Create a `docker-compose.override.yml` for local development:
-
-```yaml
-version: '3.8'
-services:
-  bcmasto:
-    build: .
-    ports:
-      - "3000:3000"
-    env_file: .env
-    restart: unless-stopped
-```
-
-Then run:
+The project includes a `docker-compose.yml`. Run:
 
 ```bash
 docker-compose up -d
 ```
 
-## Step 5: Production Setup with Caddy
+This will start the app on port 4444.
 
-Once you're ready to deploy:
+## Step 5: First Run - Register Your Instance
 
-1. Update your `.env` file:
-   ```
-   MASTODON_INSTANCE=https://mastodon.social
-   MASTODON_CLIENT_ID=your_client_id
-   MASTODON_CLIENT_SECRET=your_client_secret
-   REDIRECT_URI=https://your-domain.com/auth/callback
-   SESSION_SECRET=your-random-secret
-   NODE_ENV=production
-   ```
+1. Open the app at `http://localhost:4444`
+2. You'll see the instance selection screen
+3. Enter your Mastodon instance URL (e.g., `https://mastodon.social`)
+4. Click "Register" - the app will automatically register itself with that instance
+5. Click "Login with Mastodon"
+6. Grant permissions on your Mastodon instance
+7. You're now logged in and ready to use the app!
 
-2. Create your Caddyfile (e.g., at `/etc/caddy/Caddyfile.d/bcmasto`):
-   ```caddy
-   bandcamp.example.com {
-     reverse_proxy localhost:3000
-   }
-   ```
+## Step 6: Using the App
 
-3. Reload Caddy:
-   ```bash
-   sudo caddy reload
-   ```
+1. Once logged in, paste a Bandcamp album URL in the input field
+2. The app will scrape the album metadata (title, artist, cover image, description)
+3. Review the preview and edit any fields if needed
+4. Click "Post to Mastodon" to create a status on your instance
+5. The post will include the cover art and your custom text
 
-4. Start the Docker container:
-   ```bash
-   docker run -d \
-     --name bcmasto \
-     --restart unless-stopped \
-     -p 3000:3000 \
-     --env-file .env \
-     bcmasto
-   ```
+## Step 7: Production Setup with Caddy
 
-## Testing Your Setup
+Once you're ready to deploy to production:
 
-1. Open your app in a browser
-2. Click "Login with Mastodon"
-3. You should be redirected to Mastodon to authorize
-4. After granting permission, you should be logged in
-5. Paste a Bandcamp album URL (e.g., https://artist.bandcamp.com/album/album-name)
-6. Click "Fetch Album Info"
-7. Review the preview and edit if needed
-8. Click "Post to Mastodon"
+### 1. Update Your Configuration
+
+Update your `.env` file:
+```
+REDIRECT_URI=https://your-domain.com/auth/callback
+SESSION_SECRET=your-random-secret
+ASPNETCORE_ENVIRONMENT=Production
+PORT=4444
+```
+
+### 2. Create a Caddyfile
+
+Create or edit your Caddyfile (e.g., at `/etc/caddy/Caddyfile.d/bcmasto`):
+```caddy
+bandcamp.example.com {
+  reverse_proxy localhost:4444
+}
+```
+
+Replace `bandcamp.example.com` with your actual domain.
+
+### 3. Reload Caddy
+
+```bash
+sudo caddy reload
+```
+
+### 4. Start the Docker Container
+
+```bash
+docker run -d \
+  --name bcmasto \
+  --restart unless-stopped \
+  -p 4444:4444 \
+  --env-file .env \
+  bcmasto
+```
+
+Caddy will automatically handle HTTPS, redirects, and proxying to your .NET application.
+
+## Stopping the App
+
+### For Local .NET Development
+Press `Ctrl+C` in the terminal running the app.
+
+### For Docker
+```bash
+docker stop bcmasto
+```
+
+### For Docker Compose
+```bash
+docker-compose down
+```
+
+## Updating the App
+
+### For Local Development
+
+```bash
+git pull
+cd src
+dotnet build
+cd bcmasto
+dotnet run
+```
+
+### For Docker
+
+```bash
+git pull
+docker build -t bcmasto .
+docker stop bcmasto
+docker run -d \
+  --name bcmasto \
+  -p 4444:4444 \
+  --env-file .env \
+  bcmasto
+```
+
+### For Docker Compose
+
+```bash
+git pull
+docker-compose up -d --build
+```
 
 ## Troubleshooting
 
-### Issue: "Invalid client" or "Redirect URI mismatch"
+### Issue: "Failed to register with instance"
 
-**Solution**: Make sure your `REDIRECT_URI` in `.env` exactly matches what you registered in Mastodon's app settings, including the protocol (http/https).
+**Solution**: 
+- Make sure you entered a valid Mastodon instance URL (e.g., `https://mastodon.social`)
+- The instance must be accessible from your server
+- Some instances may have registration disabled or rate limits
+
+### Issue: "Redirect URI mismatch" after registration
+
+**Solution**: Make sure your `REDIRECT_URI` in `.env` will be accessible from the Mastodon instance. Examples:
+- Local: `http://localhost:4444/auth/callback`
+- Production: `https://your-domain.com/auth/callback`
 
 ### Issue: "Failed to scrape URL"
 
@@ -142,62 +229,87 @@ Once you're ready to deploy:
 - Check that the Bandcamp URL is valid and public
 - Try a different album to test
 - Bandcamp may have changed their HTML structure
+- The server running the app must have internet access to fetch the Bandcamp page
 
-### Issue: Port 3000 already in use
+### Issue: Port 4444 already in use
 
 **Solution**: Either:
-- Stop the container using port 3000: `docker ps | grep 3000` then `docker stop <container>`
-- Or change the port in your docker run command: `-p 3001:3000`
+- Stop the container using port 4444: `docker ps | grep 4444` then `docker stop <container>`
+- Change the port in your docker run command: `-p 5001:4444`
+- Set a different PORT in your `.env` file (and update REDIRECT_URI accordingly)
+- Use a different port for local development by setting `ASPNETCORE_URLS=http://localhost:5001`
+
+### Issue: Application fails to start
+
+**Solution**:
+- Check the console output for error messages
+- Make sure `.env` file is in the correct directory
+- Verify REDIRECT_URI is properly formatted with `https://` or `http://`
+- Check that all required environment variables are set
+
+### Issue: "Please log in first" after registration
+
+**Solution**:
+- Session cookies may not be persisting. Check that:
+  - Cookies are enabled in your browser
+  - In production, you're using HTTPS (Caddy handles this)
+  - The SESSION_SECRET in `.env` is set
 
 ### Issue: Images not uploading
 
 **Solution**:
 - Make sure your Mastodon instance allows image uploads
 - Check that the album cover image URL is accessible from your server
-- Your Mastodon instance may have file size limits
+- Your Mastodon instance may have file size limits (usually 10-40 MB)
+- Check the application logs for specific error messages
 
-### Issue: Sessions not persisting
+### Issue: Can't login after selecting instance
 
-**Solution**: 
-- Sessions use HTTP-only cookies; make sure cookies are enabled
-- In production, always use HTTPS (Caddy does this automatically)
-
-## Stopping the App
-
-```bash
-docker stop bcmasto
-```
-
-## Updating the App
-
-After pulling new changes:
-
-```bash
-docker build -t bcmasto .
-docker stop bcmasto
-docker run -d \
-  --name bcmasto \
-  -p 3000:3000 \
-  --env-file .env \
-  bcmasto
-```
-
-Or with docker-compose:
-
-```bash
-docker-compose up -d --build
-```
+**Solution**:
+- Make sure the REDIRECT_URI in your `.env` matches what you're using to access the app
+- If using Docker with a custom port, update REDIRECT_URI accordingly
+- Clear browser cookies and try again
+- Check application logs: `docker logs bcmasto`
 
 ## Security Reminders
 
-- ✅ Use HTTPS in production (Caddy handles this)
-- ✅ Set a strong `SESSION_SECRET`
-- ✅ Never commit `.env` to git
-- ✅ The app only requests `write:media` and `write:statuses` (minimal permissions)
+- ✅ Use HTTPS in production (Caddy handles this automatically)
+- ✅ Set a strong `SESSION_SECRET` using `openssl rand -base64 32`
+- ✅ Never commit `.env` to git (it's in `.gitignore`)
+- ✅ The app only requests `write:media` and `write:statuses` scopes (minimal permissions)
 - ✅ Your access token is stored in a secure, HTTP-only cookie
+- ✅ Keep your .NET dependencies updated regularly
 
-## Next Steps
+## Environment Variables Reference
 
-- Customize the appearance by editing `client/style.css`
-- Add more Mastodon instances by extending the session handling
-- Set up monitoring/logging for your deployment
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `REDIRECT_URI` | Yes | `http://localhost:4444/auth/callback` | OAuth callback URL. Must match what you configured when registering the app. |
+| `SESSION_SECRET` | Yes | - | Secret key for session encryption. Generate with `openssl rand -base64 32`. |
+| `PORT` | No | `4444` | Port the application listens on. |
+| `ASPNETCORE_ENVIRONMENT` | No | `Development` | Set to `Production` for production deployments. |
+
+## Production Checklist
+
+- [ ] Set strong `SESSION_SECRET` using `openssl rand -base64 32`
+- [ ] Use HTTPS (Caddy or similar reverse proxy)
+- [ ] Set `ASPNETCORE_ENVIRONMENT=Production`
+- [ ] Update `REDIRECT_URI` to your production domain
+- [ ] Never commit `.env` to version control
+- [ ] Regularly update .NET dependencies: `dotnet outdated`
+- [ ] Monitor application logs
+- [ ] Use persistent session storage (Redis) for multi-instance setups
+- [ ] Test OAuth with your actual Mastodon instance
+- [ ] Test image uploads to verify media handling
+
+## Need Help?
+
+Check:
+1. Application console output for specific error messages
+2. Browser DevTools (F12) for network errors
+3. Docker logs: `docker logs bcmasto`
+4. [DEVELOPMENT.md](DEVELOPMENT.md) for architectural details
+5. [Mastodon API documentation](https://docs.joinmastodon.org/)
+6. Project issues on GitHub
+
+Happy posting! 🎵📮

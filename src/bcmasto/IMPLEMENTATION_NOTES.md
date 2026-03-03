@@ -84,7 +84,7 @@ const data = await response.json();
 ### C# (would use HttpClient or TestServer)
 ```csharp
 var client = new HttpClient();
-var response = await client.GetAsync("http://localhost:5000/api/status");
+var response = await client.GetAsync("http://localhost:4444/api/status");
 var data = await response.Content.ReadAsAsync<StatusResponse>();
 ```
 
