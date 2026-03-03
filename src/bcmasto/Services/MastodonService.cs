@@ -17,14 +17,14 @@ public class MastodonService : IMastodonService
         _redirectUri = redirectUri;
     }
 
-    public async Task<(string ClientId, string ClientSecret)> RegisterAppAsync(string instance)
+    public async Task<(string ClientId, string ClientSecret)> RegisterAppAsync(string instance, string redirectUri)
     {
         var client = _httpClientFactory.CreateClient("Default");
 
         var registerData = new
         {
             client_name = AppConfig.AppName,
-            redirect_uris = _redirectUri,
+            redirect_uris = redirectUri,
             scopes = "write:media write:statuses"
         };
 
@@ -44,7 +44,7 @@ public class MastodonService : IMastodonService
         return (clientId, clientSecret);
     }
 
-    public async Task<string> GetAccessTokenAsync(string instance, string clientId, string clientSecret, string code)
+    public async Task<string> GetAccessTokenAsync(string instance, string clientId, string clientSecret, string code, string redirectUri)
     {
         var client = _httpClientFactory.CreateClient("Default");
 
@@ -52,7 +52,7 @@ public class MastodonService : IMastodonService
         {
             { "client_id", clientId },
             { "client_secret", clientSecret },
-            { "redirect_uri", _redirectUri },
+            { "redirect_uri", redirectUri },
             { "grant_type", "authorization_code" },
             { "code", code }
         };

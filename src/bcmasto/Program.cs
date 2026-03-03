@@ -35,14 +35,14 @@ app.UseStaticFiles();
 // Map endpoints
 app.MapBcMastoEndpoints();
 
-// Fallback for SPA
-app.MapFallback((HttpContext context) =>
+// Serve index.html for root
+app.MapGet("/", context =>
 {
     context.Response.ContentType = "text/html";
     return context.Response.SendFileAsync(
         Path.Combine(app.Environment.WebRootPath, "index.html"));
 });
 
-app.Run($"http://localhost:{config.Port}");
+app.Run($"http://0.0.0.0:{config.Port}");
 Console.WriteLine($"Server running on port {config.Port}");
 Console.WriteLine($"Redirect URI: {config.RedirectUri}");

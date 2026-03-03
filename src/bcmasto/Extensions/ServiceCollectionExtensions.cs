@@ -42,9 +42,9 @@ public static class ServiceCollectionExtensions
         var authGroup = app.MapGroup("/auth")
             .WithTags("Authentication");
         
-        authGroup.MapPost("/login", AuthEndpoints.Login);
+        authGroup.MapGet("/login", AuthEndpoints.Login);
         authGroup.MapGet("/callback", AuthEndpoints.Callback);
-        authGroup.MapPost("/logout", AuthEndpoints.Logout);
+        authGroup.MapGet("/logout", AuthEndpoints.Logout);
 
         var apiGroup = app.MapGroup("/api")
             .WithTags("API");

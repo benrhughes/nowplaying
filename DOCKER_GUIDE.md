@@ -68,6 +68,7 @@ Stage 2: Runtime (ASP.NET)
 cd bcmasto
 
 # Build Docker image
+# (tests are skipped by default; include --build-arg RUN_TESTS=true to run them)
 docker build -t bcmasto:latest .
 
 # Run container

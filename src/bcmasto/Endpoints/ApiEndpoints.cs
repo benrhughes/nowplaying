@@ -9,7 +9,8 @@ public static class ApiEndpoints
     public static async Task<IResult> Register(
         HttpContext context,
         RegisterRequest request,
-        IMastodonService mastodonService)
+        IMastodonService mastodonService,
+        AppConfig config)
     {
         if (string.IsNullOrEmpty(request.Instance))
         {
@@ -29,12 +30,12 @@ public static class ApiEndpoints
 
         try
         {
-            var (clientId, clientSecret) = await mastodonService.RegisterAppAsync(instance);
+            var (clientId, clientSecret) = await mastodonService.RegisterAppAsync(instance, config.RedirectUri);
 
             context.Session.SetString("instance", instance);
             context.Session.SetString("clientId", clientId);
             context.Session.SetString("clientSecret", clientSecret);
-            context.Session.SetString("redirectUri", "http://localhost:5000/auth/callback");
+            context.Session.SetString("redirectUri", config.RedirectUri);
 
             return Results.Ok(new RegistrationResponse(true, instance));
         }

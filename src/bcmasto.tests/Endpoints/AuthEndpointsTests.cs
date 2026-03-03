@@ -66,7 +66,7 @@ public class AuthEndpointsTests
     public async Task Callback_WithValidCode_ReturnsResult()
     {
         // Arrange
-        _mastodonServiceMock.Setup(m => m.GetAccessTokenAsync("mastodon.social", "client-id", "client-secret", "auth-code"))
+        _mastodonServiceMock.Setup(m => m.GetAccessTokenAsync("mastodon.social", "client-id", "client-secret", "auth-code", "http://localhost:5000/auth/callback"))
             .ReturnsAsync("access-token");
 
         // Act
@@ -120,7 +120,7 @@ public class AuthEndpointsTests
     public async Task Callback_WithServiceError_ReturnsResult()
     {
         // Arrange
-        _mastodonServiceMock.Setup(m => m.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+        _mastodonServiceMock.Setup(m => m.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ThrowsAsync(new HttpRequestException("Service error"));
 
         // Act

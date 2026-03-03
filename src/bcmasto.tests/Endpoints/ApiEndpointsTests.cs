@@ -15,6 +15,7 @@ public class ApiEndpointsTests
     private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
     private readonly Mock<HttpContext> _httpContextMock;
     private readonly Mock<ISession> _sessionMock;
+    private readonly AppConfig _config;
 
     public ApiEndpointsTests()
     {
@@ -23,6 +24,7 @@ public class ApiEndpointsTests
         _httpClientFactoryMock = new Mock<IHttpClientFactory>();
         _httpContextMock = new Mock<HttpContext>();
         _sessionMock = new Mock<ISession>();
+        _config = new AppConfig { RedirectUri = "http://localhost:5000/auth/callback" };
 
         _httpContextMock.Setup(h => h.Session).Returns(_sessionMock.Object);
     }
@@ -32,11 +34,11 @@ public class ApiEndpointsTests
     {
         // Arrange
         var request = new RegisterRequest("https://mastodon.social");
-        _mastodonServiceMock.Setup(m => m.RegisterAppAsync("mastodon.social"))
+        _mastodonServiceMock.Setup(m => m.RegisterAppAsync("mastodon.social", _config.RedirectUri))
             .ReturnsAsync(("client-id", "client-secret"));
 
         // Act
-        var result = await ApiEndpoints.Register(_httpContextMock.Object, request, _mastodonServiceMock.Object);
+        var result = await ApiEndpoints.Register(_httpContextMock.Object, request, _mastodonServiceMock.Object, _config);
 
         // Assert
         Assert.NotNull(result);
@@ -49,7 +51,7 @@ public class ApiEndpointsTests
         var request = new RegisterRequest(null!);
 
         // Act
-        var result = await ApiEndpoints.Register(_httpContextMock.Object, request, _mastodonServiceMock.Object);
+        var result = await ApiEndpoints.Register(_httpContextMock.Object, request, _mastodonServiceMock.Object, _config);
 
         // Assert
         Assert.NotNull(result);
@@ -62,7 +64,7 @@ public class ApiEndpointsTests
         var request = new RegisterRequest("not a valid url");
 
         // Act
-        var result = await ApiEndpoints.Register(_httpContextMock.Object, request, _mastodonServiceMock.Object);
+        var result = await ApiEndpoints.Register(_httpContextMock.Object, request, _mastodonServiceMock.Object, _config);
 
         // Assert
         Assert.NotNull(result);

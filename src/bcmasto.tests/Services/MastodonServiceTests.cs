@@ -34,7 +34,7 @@ public class MastodonServiceTests
         _httpClientFactoryMock.Setup(f => f.CreateClient("Default")).Returns(httpClient);
 
         // Act
-        var (clientId, clientSecret) = await _service.RegisterAppAsync(Instance);
+        var (clientId, clientSecret) = await _service.RegisterAppAsync(Instance, RedirectUri);
 
         // Assert
         Assert.Equal("test-client-id", clientId);
@@ -49,7 +49,7 @@ public class MastodonServiceTests
         _httpClientFactoryMock.Setup(f => f.CreateClient("Default")).Returns(httpClient);
 
         // Act & Assert
-        await Assert.ThrowsAsync<HttpRequestException>(() => _service.RegisterAppAsync(Instance));
+        await Assert.ThrowsAsync<HttpRequestException>(() => _service.RegisterAppAsync(Instance, RedirectUri));
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class MastodonServiceTests
         _httpClientFactoryMock.Setup(f => f.CreateClient("Default")).Returns(httpClient);
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.RegisterAppAsync(Instance));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.RegisterAppAsync(Instance, RedirectUri));
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public class MastodonServiceTests
         _httpClientFactoryMock.Setup(f => f.CreateClient("Default")).Returns(httpClient);
 
         // Act
-        var accessToken = await _service.GetAccessTokenAsync(Instance, "client-id", "secret", "code");
+        var accessToken = await _service.GetAccessTokenAsync(Instance, "client-id", "secret", "code", RedirectUri);
 
         // Assert
         Assert.Equal("test-access-token", accessToken);
@@ -92,7 +92,7 @@ public class MastodonServiceTests
 
         // Act & Assert
         await Assert.ThrowsAsync<HttpRequestException>(() => 
-            _service.GetAccessTokenAsync(Instance, "client-id", "secret", "code"));
+            _service.GetAccessTokenAsync(Instance, "client-id", "secret", "code", RedirectUri));
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class MastodonServiceTests
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
-            _service.GetAccessTokenAsync(Instance, "client-id", "secret", "code"));
+            _service.GetAccessTokenAsync(Instance, "client-id", "secret", "code", RedirectUri));
     }
 
     [Fact]

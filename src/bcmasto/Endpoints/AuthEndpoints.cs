@@ -15,7 +15,11 @@ public static class AuthEndpoints
             return Results.BadRequest(new ErrorResponse("Instance not configured. Please select an instance first."));
         }
 
-        var redirectUri = context.Session.GetString("redirectUri") ?? "http://localhost:5000/auth/callback";
+        var redirectUri = context.Session.GetString("redirectUri");
+        if (string.IsNullOrEmpty(redirectUri))
+        {
+            return Results.BadRequest(new ErrorResponse("Redirect URI not found in session. Please register your instance first."));
+        }
         var authUrl = $"{instance}/oauth/authorize?" +
                       $"client_id={Uri.EscapeDataString(clientId)}" +
                       $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
@@ -46,7 +50,8 @@ public static class AuthEndpoints
 
         try
         {
-            var accessToken = await mastodonService.GetAccessTokenAsync(instance, clientId, clientSecret, code);
+            var redirectUri = context.Session.GetString("redirectUri") ?? "http://localhost:5000/auth/callback";
+            var accessToken = await mastodonService.GetAccessTokenAsync(instance, clientId, clientSecret, code, redirectUri);
             context.Session.SetString("accessToken", accessToken);
 
             return Results.Redirect("/");
