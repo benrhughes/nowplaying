@@ -1,7 +1,7 @@
+namespace BcMasto.Endpoints;
+
 using BcMasto.Models;
 using BcMasto.Services;
-
-namespace BcMasto.Endpoints;
 
 public static class AuthEndpoints
 {
@@ -20,6 +20,7 @@ public static class AuthEndpoints
         {
             return Results.BadRequest(new ErrorResponse("Redirect URI not found in session. Please register your instance first."));
         }
+
         var authUrl = $"{instance}/oauth/authorize?" +
                       $"client_id={Uri.EscapeDataString(clientId)}" +
                       $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
@@ -32,7 +33,8 @@ public static class AuthEndpoints
     public static async Task<IResult> Callback(
         HttpContext context,
         string? code,
-        IMastodonService mastodonService)
+        IMastodonService mastodonService,
+        ILoggerFactory loggerFactory)
     {
         if (string.IsNullOrEmpty(code))
         {
@@ -58,7 +60,8 @@ public static class AuthEndpoints
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"OAuth callback failed: {ex.Message}");
+            var logger = loggerFactory.CreateLogger(nameof(AuthEndpoints));
+            logger.LogError(ex, "OAuth callback failed");
             return Results.StatusCode(StatusCodes.Status500InternalServerError);
         }
     }

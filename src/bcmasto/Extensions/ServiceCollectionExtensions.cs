@@ -1,15 +1,16 @@
+namespace BcMasto.Extensions;
+
 using BcMasto.Endpoints;
+using BcMasto.Filters;
 using BcMasto.Models;
 using BcMasto.Services;
-
-namespace BcMasto.Extensions;
 
 public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddServices(this IServiceCollection services, AppConfig config)
     {
         services.AddDistributedMemoryCache();
-        
+
         services.AddSession(options =>
         {
             options.IdleTimeout = TimeSpan.FromHours(24);
@@ -25,14 +26,16 @@ public static class ServiceCollectionExtensions
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("BcMasto/1.0");
             });
 
-        services.AddScoped<IMastodonService>(sp => 
-            new MastodonService(sp.GetRequiredService<IHttpClientFactory>(), 
-                               sp.GetRequiredService<ILogger<MastodonService>>(),
-                               config.RedirectUri));
-        
+        services.AddScoped<IMastodonService>(sp =>
+            new MastodonService(
+                sp.GetRequiredService<IHttpClientFactory>(),
+                sp.GetRequiredService<ILogger<MastodonService>>(),
+                config.RedirectUri));
+
         services.AddScoped<IBandcampService>(sp =>
-            new BandcampService(sp.GetRequiredService<IHttpClientFactory>(),
-                               sp.GetRequiredService<ILogger<BandcampService>>()));
+            new BandcampService(
+                sp.GetRequiredService<IHttpClientFactory>(),
+                sp.GetRequiredService<ILogger<BandcampService>>()));
 
         return services;
     }
@@ -41,14 +44,15 @@ public static class ServiceCollectionExtensions
     {
         var authGroup = app.MapGroup("/auth")
             .WithTags("Authentication");
-        
+
         authGroup.MapGet("/login", AuthEndpoints.Login);
         authGroup.MapGet("/callback", AuthEndpoints.Callback);
         authGroup.MapGet("/logout", AuthEndpoints.Logout);
 
         var apiGroup = app.MapGroup("/api")
-            .WithTags("API");
-        
+            .WithTags("API")
+            .AddEndpointFilter<ValidationFilter>();
+
         apiGroup.MapPost("/register", ApiEndpoints.Register);
         apiGroup.MapGet("/status", ApiEndpoints.Status);
         apiGroup.MapPost("/scrape", ApiEndpoints.Scrape);

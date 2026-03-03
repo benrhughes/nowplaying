@@ -1,0 +1,12 @@
+#Instructions
+
+## General
+- NEVER run `scp` or `rsync` without explicit permission
+- NEVER commit to git or otherwise perform write operations on git without explicit permission
+
+## DotNet
+- ALWAYS add test coverage for new code changes
+- ALWAYS build and run tests after code changes
+- ALWAYS fix compilation errors and warnings
+- use model validation
+- use modern language features where appropriate, eg primary constuctors

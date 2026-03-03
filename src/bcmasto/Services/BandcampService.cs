@@ -7,6 +7,7 @@ namespace BcMasto.Services;
 public class BandcampService : IBandcampService
 {
     private readonly IHttpClientFactory _httpClientFactory;
+
     private readonly ILogger<BandcampService> _logger;
 
     public BandcampService(IHttpClientFactory httpClientFactory, ILogger<BandcampService> logger)
@@ -28,9 +29,9 @@ public class BandcampService : IBandcampService
         var descriptionNode = doc.DocumentNode.SelectSingleNode("//meta[@property='og:description']");
         var titleTagNode = doc.DocumentNode.SelectSingleNode("//title");
 
-        var title = titleNode?.GetAttributeValue("content", null) ?? titleTagNode?.InnerText ?? "";
+        var title = titleNode?.GetAttributeValue("content", null) ?? titleTagNode?.InnerText ?? string.Empty;
         var image = imageNode?.GetAttributeValue("content", null);
-        var description = descriptionNode?.GetAttributeValue("content", null) ?? "";
+        var description = descriptionNode?.GetAttributeValue("content", null) ?? string.Empty;
 
         var (artist, album) = ParseArtistAndAlbum(title);
 
@@ -46,7 +47,9 @@ public class BandcampService : IBandcampService
     private (string Artist, string Album) ParseArtistAndAlbum(string title)
     {
         if (string.IsNullOrEmpty(title))
-            return ("", "");
+        {
+            return (string.Empty, string.Empty);
+        }
 
         // Pattern: "Album – Artist"
         var match = Regex.Match(title, @"(.+?)\s*–\s*(.+?)(?:\s+by|on Bandcamp)?$", RegexOptions.IgnoreCase);
@@ -62,6 +65,6 @@ public class BandcampService : IBandcampService
             return (byMatch.Groups[2].Value.Trim(), byMatch.Groups[1].Value.Trim());
         }
 
-        return ("", "");
+        return (string.Empty, string.Empty);
     }
 }

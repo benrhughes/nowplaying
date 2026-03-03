@@ -18,10 +18,10 @@ public record RegistrationResponse(bool Success, string Instance);
 
 // Internal models for Mastodon API
 internal record AppRegistrationResponse(
-    string? ClientId = null,
-    string? ClientSecret = null,
-    string? Id = null,
-    string? Name = null)
+    string? clientId = null,
+    string? clientSecret = null,
+    string? id = null,
+    string? name = null)
 {
     [System.Text.Json.Serialization.JsonPropertyName("client_id")]
     public string? Client_id { get; set; }
@@ -30,6 +30,6 @@ internal record AppRegistrationResponse(
     public string? Client_secret { get; set; }
 }
 
-internal record MediaResponse(string Id, string? Type = null, string? Url = null);
+internal record MediaResponse(string id, string? type = null, string? url = null);
 
-internal record StatusMastodonResponse(string Id, string? Url = null, string? Content = null);
+internal record StatusMastodonResponse(string id, string? url = null, string? content = null);

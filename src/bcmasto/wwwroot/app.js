@@ -91,6 +91,7 @@ class BcMasto {
       const data = await response.json();
       this.authenticated = data.authenticated;
       this.registered = data.registered;
+      this.instance = data.instance;
     } catch (error) {
       console.error('Auth check failed:', error);
     }
@@ -132,6 +133,7 @@ class BcMasto {
     if (this.authenticated) {
       this.loginBtn.style.display = 'none';
       this.logoutBtn.style.display = 'inline-block';
+      this.loggedInText.textContent = `Logged in to ${this.instance ?? 'Mastodon'}`;
       this.loggedInText.style.display = 'inline-block';
     } else {
       this.loginBtn.style.display = 'inline-block';

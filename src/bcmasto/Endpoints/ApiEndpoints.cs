@@ -1,8 +1,8 @@
+namespace BcMasto.Endpoints;
+
 using BcMasto.Extensions;
 using BcMasto.Models;
 using BcMasto.Services;
-
-namespace BcMasto.Endpoints;
 
 public static class ApiEndpoints
 {
@@ -10,13 +10,9 @@ public static class ApiEndpoints
         HttpContext context,
         RegisterRequest request,
         IMastodonService mastodonService,
-        AppConfig config)
+        AppConfig config,
+        ILoggerFactory loggerFactory)
     {
-        if (string.IsNullOrEmpty(request.Instance))
-        {
-            return Results.BadRequest(new ErrorResponse("Mastodon instance URL is required"));
-        }
-
         string instance;
         try
         {
@@ -41,7 +37,8 @@ public static class ApiEndpoints
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"App registration failed for {instance}: {ex.Message}");
+            var logger = loggerFactory.CreateLogger(nameof(ApiEndpoints));
+            logger.LogError(ex, "App registration failed for {instance}", instance);
             return Results.StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
@@ -61,24 +58,10 @@ public static class ApiEndpoints
     public static async Task<IResult> Scrape(
         HttpContext context,
         ScrapeRequest request,
-        IBandcampService bandcampService)
+        IBandcampService bandcampService,
+        ILoggerFactory loggerFactory)
     {
-        if (string.IsNullOrEmpty(request.Url))
-        {
-            return Results.BadRequest(new ErrorResponse("URL is required"));
-        }
-
-        Uri parsedUrl;
-        try
-        {
-            parsedUrl = new Uri(request.Url);
-        }
-        catch
-        {
-            return Results.BadRequest(new ErrorResponse("Invalid URL"));
-        }
-
-        var host = parsedUrl.Host;
+        var host = new Uri(request.Url).Host;
         if (!host.EndsWith(".bandcamp.com") && host != "bandcamp.com")
         {
             return Results.BadRequest(new ErrorResponse("Only Bandcamp URLs are supported"));
@@ -91,7 +74,8 @@ public static class ApiEndpoints
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Scrape failed for {request.Url}: {ex.Message}");
+            var logger = loggerFactory.CreateLogger(nameof(ApiEndpoints));
+            logger.LogError(ex, "Scrape failed for {url}", request.Url);
             return Results.StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
@@ -100,7 +84,8 @@ public static class ApiEndpoints
         HttpContext context,
         PostRequest request,
         IMastodonService mastodonService,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        ILoggerFactory loggerFactory)
     {
         var accessToken = context.Session.GetString("accessToken");
         var instance = context.Session.GetString("instance");
@@ -108,11 +93,6 @@ public static class ApiEndpoints
         if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(instance))
         {
             return Results.Unauthorized();
-        }
-
-        if (string.IsNullOrEmpty(request.Text) || string.IsNullOrEmpty(request.ImageUrl))
-        {
-            return Results.BadRequest(new ErrorResponse("Text and image are required"));
         }
 
         try
@@ -127,7 +107,8 @@ public static class ApiEndpoints
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Post failed: {ex.Message}");
+            var logger = loggerFactory.CreateLogger(nameof(ApiEndpoints));
+            logger.LogError(ex, "Post failed");
             return Results.StatusCode(StatusCodes.Status500InternalServerError);
         }
     }

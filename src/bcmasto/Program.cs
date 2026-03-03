@@ -34,6 +34,8 @@ app.UseStaticFiles();
 
 app.MapEndpoints();
 
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("Server running on port {port}", config.Port);
+logger.LogInformation("Redirect URI: {redirectUri}", config.RedirectUri);
+
 app.Run($"http://0.0.0.0:{config.Port}");
-Console.WriteLine($"Server running on port {config.Port}");
-Console.WriteLine($"Redirect URI: {config.RedirectUri}");

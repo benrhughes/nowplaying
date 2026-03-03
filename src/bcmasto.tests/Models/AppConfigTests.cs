@@ -6,10 +6,15 @@ namespace BcMasto.Tests.Models;
 public class AppConfigTests
 {
     [Fact]
-    public void AppConfig_HasDefaultValues()
+    public void AppConfig_CanBeInitializedWithRequiredProperties()
     {
         // Arrange & Act
-        var config = new AppConfig();
+        var config = new AppConfig
+        {
+            Port = 4444,
+            RedirectUri = "http://localhost:4444/auth/callback",
+            SessionSecret = "dev-secret-change-in-production"
+        };
 
         // Assert
         Assert.Equal(4444, config.Port);

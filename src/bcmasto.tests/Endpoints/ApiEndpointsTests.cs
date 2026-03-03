@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using BcMasto.Endpoints;
 using BcMasto.Models;
 using BcMasto.Services;
@@ -15,6 +16,7 @@ public class ApiEndpointsTests
     private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
     private readonly Mock<HttpContext> _httpContextMock;
     private readonly Mock<ISession> _sessionMock;
+    private readonly Mock<ILoggerFactory> _loggerFactoryMock;
     private readonly AppConfig _config;
 
     public ApiEndpointsTests()
@@ -24,7 +26,15 @@ public class ApiEndpointsTests
         _httpClientFactoryMock = new Mock<IHttpClientFactory>();
         _httpContextMock = new Mock<HttpContext>();
         _sessionMock = new Mock<ISession>();
-        _config = new AppConfig { RedirectUri = "http://localhost:4444/auth/callback" };
+        _loggerFactoryMock = new Mock<ILoggerFactory>();
+        _loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>()))
+            .Returns(new Mock<ILogger>().Object);
+        _config = new AppConfig 
+        { 
+            Port = 4444,
+            RedirectUri = "http://localhost:4444/auth/callback",
+            SessionSecret = "dev-secret"
+        };
 
         _httpContextMock.Setup(h => h.Session).Returns(_sessionMock.Object);
     }
@@ -38,36 +48,25 @@ public class ApiEndpointsTests
             .ReturnsAsync(("client-id", "client-secret"));
 
         // Act
-        var result = await ApiEndpoints.Register(_httpContextMock.Object, request, _mastodonServiceMock.Object, _config);
+        var result = await ApiEndpoints.Register(_httpContextMock.Object, request, _mastodonServiceMock.Object, _config, _loggerFactoryMock.Object);
 
         // Assert
         Assert.NotNull(result);
     }
 
     [Fact]
-    public async Task Register_WithNullInstance_ReturnsResult()
+    public void RegisterRequest_WithNullInstance_FailsValidation()
     {
         // Arrange
         var request = new RegisterRequest(null!);
+        var validationResults = new List<ValidationResult>();
 
         // Act
-        var result = await ApiEndpoints.Register(_httpContextMock.Object, request, _mastodonServiceMock.Object, _config);
+        var isValid = Validator.TryValidateObject(request, new ValidationContext(request), validationResults, validateAllProperties: true);
 
         // Assert
-        Assert.NotNull(result);
-    }
-
-    [Fact]
-    public async Task Register_WithInvalidUrl_ReturnsResult()
-    {
-        // Arrange
-        var request = new RegisterRequest("not a valid url");
-
-        // Act
-        var result = await ApiEndpoints.Register(_httpContextMock.Object, request, _mastodonServiceMock.Object, _config);
-
-        // Assert
-        Assert.NotNull(result);
+        Assert.False(isValid);
+        Assert.Contains(validationResults, r => r.MemberNames.Contains(nameof(RegisterRequest.Instance)));
     }
 
     [Fact]
@@ -107,36 +106,40 @@ public class ApiEndpointsTests
             .ReturnsAsync(scrapeResponse);
 
         // Act
-        var result = await ApiEndpoints.Scrape(_httpContextMock.Object, request, _bandcampServiceMock.Object);
+        var result = await ApiEndpoints.Scrape(_httpContextMock.Object, request, _bandcampServiceMock.Object, _loggerFactoryMock.Object);
 
         // Assert
         Assert.NotNull(result);
     }
 
     [Fact]
-    public async Task Scrape_WithNullUrl_ReturnsResult()
+    public void ScrapeRequest_WithNullUrl_FailsValidation()
     {
         // Arrange
         var request = new ScrapeRequest(null!);
+        var validationResults = new List<ValidationResult>();
 
         // Act
-        var result = await ApiEndpoints.Scrape(_httpContextMock.Object, request, _bandcampServiceMock.Object);
+        var isValid = Validator.TryValidateObject(request, new ValidationContext(request), validationResults, validateAllProperties: true);
 
         // Assert
-        Assert.NotNull(result);
+        Assert.False(isValid);
+        Assert.Contains(validationResults, r => r.MemberNames.Contains(nameof(ScrapeRequest.Url)));
     }
 
     [Fact]
-    public async Task Scrape_WithInvalidUrl_ReturnsResult()
+    public void ScrapeRequest_WithInvalidUrl_FailsValidation()
     {
         // Arrange
         var request = new ScrapeRequest("not a valid url");
+        var validationResults = new List<ValidationResult>();
 
         // Act
-        var result = await ApiEndpoints.Scrape(_httpContextMock.Object, request, _bandcampServiceMock.Object);
+        var isValid = Validator.TryValidateObject(request, new ValidationContext(request), validationResults, validateAllProperties: true);
 
         // Assert
-        Assert.NotNull(result);
+        Assert.False(isValid);
+        Assert.Contains(validationResults, r => r.MemberNames.Contains(nameof(ScrapeRequest.Url)));
     }
 
     [Fact]
@@ -146,7 +149,7 @@ public class ApiEndpointsTests
         var request = new ScrapeRequest("https://spotify.com/album/test");
 
         // Act
-        var result = await ApiEndpoints.Scrape(_httpContextMock.Object, request, _bandcampServiceMock.Object);
+        var result = await ApiEndpoints.Scrape(_httpContextMock.Object, request, _bandcampServiceMock.Object, _loggerFactoryMock.Object);
 
         // Assert
         Assert.NotNull(result);
@@ -168,7 +171,7 @@ public class ApiEndpointsTests
             .ReturnsAsync(("status-id", "https://mastodon.social/@user/123"));
 
         // Act
-        var result = await ApiEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _httpClientFactoryMock.Object);
+        var result = await ApiEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _httpClientFactoryMock.Object, _loggerFactoryMock.Object);
 
         // Assert
         Assert.NotNull(result);
@@ -181,36 +184,40 @@ public class ApiEndpointsTests
         var request = new PostRequest("Check this out!", "https://example.com/image.jpg");
 
         // Act
-        var result = await ApiEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _httpClientFactoryMock.Object);
+        var result = await ApiEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _httpClientFactoryMock.Object, _loggerFactoryMock.Object);
 
         // Assert
         Assert.NotNull(result);
     }
 
     [Fact]
-    public async Task Post_WithMissingText_ReturnsResult()
+    public void PostRequest_WithMissingText_FailsValidation()
     {
         // Arrange
         var request = new PostRequest(null!, "https://example.com/image.jpg");
+        var validationResults = new List<ValidationResult>();
 
         // Act
-        var result = await ApiEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _httpClientFactoryMock.Object);
+        var isValid = Validator.TryValidateObject(request, new ValidationContext(request), validationResults, validateAllProperties: true);
 
         // Assert
-        Assert.NotNull(result);
+        Assert.False(isValid);
+        Assert.Contains(validationResults, r => r.MemberNames.Contains(nameof(PostRequest.Text)));
     }
 
     [Fact]
-    public async Task Post_WithMissingImage_ReturnsResult()
+    public void PostRequest_WithMissingImage_FailsValidation()
     {
         // Arrange
         var request = new PostRequest("Check this out!", null!);
+        var validationResults = new List<ValidationResult>();
 
         // Act
-        var result = await ApiEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _httpClientFactoryMock.Object);
+        var isValid = Validator.TryValidateObject(request, new ValidationContext(request), validationResults, validateAllProperties: true);
 
         // Assert
-        Assert.NotNull(result);
+        Assert.False(isValid);
+        Assert.Contains(validationResults, r => r.MemberNames.Contains(nameof(PostRequest.ImageUrl)));
     }
 
     private class MockImageHttpHandler : HttpMessageHandler
