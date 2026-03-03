@@ -3,8 +3,18 @@ namespace BcMasto.Endpoints;
 using BcMasto.Models;
 using BcMasto.Services;
 
+/// <summary>
+/// Authentication endpoints for OAuth.
+/// </summary>
 public static class AuthEndpoints
 {
+    /// <summary>
+    /// Initiates the OAuth login process.
+    /// </summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <param name="instance">The optional instance URL.</param>
+    /// <param name="clientId">The optional client ID.</param>
+    /// <returns>A redirect to the OAuth authorize URL.</returns>
     public static IResult Login(HttpContext context, string? instance, string? clientId)
     {
         instance ??= context.Session.GetString("instance");
@@ -30,6 +40,14 @@ public static class AuthEndpoints
         return Results.Redirect(authUrl);
     }
 
+    /// <summary>
+    /// Handles the OAuth callback.
+    /// </summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <param name="code">The authorization code.</param>
+    /// <param name="mastodonService">The Mastodon service.</param>
+    /// <param name="loggerFactory">The logger factory.</param>
+    /// <returns>A redirect to the homepage.</returns>
     public static async Task<IResult> Callback(
         HttpContext context,
         string? code,
@@ -66,6 +84,11 @@ public static class AuthEndpoints
         }
     }
 
+    /// <summary>
+    /// Logs the user out by clearing the session.
+    /// </summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <returns>A redirect to the homepage.</returns>
     public static IResult Logout(HttpContext context)
     {
         context.Session.Clear();

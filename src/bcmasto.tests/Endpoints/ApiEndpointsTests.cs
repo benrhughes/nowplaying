@@ -13,7 +13,7 @@ public class ApiEndpointsTests
 {
     private readonly Mock<IBandcampService> _bandcampServiceMock;
     private readonly Mock<IMastodonService> _mastodonServiceMock;
-    private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
+    private readonly Mock<IImageService> _imageServiceMock;
     private readonly Mock<HttpContext> _httpContextMock;
     private readonly Mock<ISession> _sessionMock;
     private readonly Mock<ILoggerFactory> _loggerFactoryMock;
@@ -23,7 +23,7 @@ public class ApiEndpointsTests
     {
         _bandcampServiceMock = new Mock<IBandcampService>();
         _mastodonServiceMock = new Mock<IMastodonService>();
-        _httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        _imageServiceMock = new Mock<IImageService>();
         _httpContextMock = new Mock<HttpContext>();
         _sessionMock = new Mock<ISession>();
         _loggerFactoryMock = new Mock<ILoggerFactory>();
@@ -161,18 +161,23 @@ public class ApiEndpointsTests
         // Arrange
         var request = new PostRequest("Check this out!", "https://example.com/image.jpg");
         
-        var httpClient = new HttpClient(new MockImageHttpHandler());
-        _httpClientFactoryMock.Setup(f => f.CreateClient("Default")).Returns(httpClient);
+        var instanceBytes = System.Text.Encoding.UTF8.GetBytes("https://mastodon.social");
+        var tokenBytes = System.Text.Encoding.UTF8.GetBytes("test-token");
+        _sessionMock.Setup(s => s.TryGetValue("instance", out instanceBytes)).Returns(true);
+        _sessionMock.Setup(s => s.TryGetValue("accessToken", out tokenBytes)).Returns(true);
+
+        _imageServiceMock.Setup(i => i.DownloadImageAsync(request.ImageUrl))
+            .ReturnsAsync(new byte[] { 0x89, 0x50, 0x4E, 0x47 });
         
         _mastodonServiceMock.Setup(m => m.UploadMediaAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<byte[]>(), null))
             .ReturnsAsync("media-id");
         
         _mastodonServiceMock.Setup(m => m.PostStatusAsync(It.IsAny<string>(), It.IsAny<string>(), "Check this out!", "media-id"))
             .ReturnsAsync(("status-id", "https://mastodon.social/@user/123"));
-
+ 
         // Act
-        var result = await ApiEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _httpClientFactoryMock.Object, _loggerFactoryMock.Object);
-
+        var result = await ApiEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _imageServiceMock.Object, _loggerFactoryMock.Object);
+ 
         // Assert
         Assert.NotNull(result);
     }
@@ -182,10 +187,10 @@ public class ApiEndpointsTests
     {
         // Arrange
         var request = new PostRequest("Check this out!", "https://example.com/image.jpg");
-
+ 
         // Act
-        var result = await ApiEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _httpClientFactoryMock.Object, _loggerFactoryMock.Object);
-
+        var result = await ApiEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _imageServiceMock.Object, _loggerFactoryMock.Object);
+ 
         // Assert
         Assert.NotNull(result);
     }

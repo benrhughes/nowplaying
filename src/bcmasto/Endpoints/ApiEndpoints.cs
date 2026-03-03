@@ -4,8 +4,20 @@ using BcMasto.Extensions;
 using BcMasto.Models;
 using BcMasto.Services;
 
+/// <summary>
+/// Main API endpoints for registration, scraping, and posting.
+/// </summary>
 public static class ApiEndpoints
 {
+    /// <summary>
+    /// Registers the application with a Mastodon instance.
+    /// </summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <param name="request">The registration request.</param>
+    /// <param name="mastodonService">The Mastodon service.</param>
+    /// <param name="config">The app configuration.</param>
+    /// <param name="loggerFactory">The logger factory.</param>
+    /// <returns>The registration response.</returns>
     public static async Task<IResult> Register(
         HttpContext context,
         RegisterRequest request,
@@ -43,6 +55,11 @@ public static class ApiEndpoints
         }
     }
 
+    /// <summary>
+    /// Returns the current authentication status.
+    /// </summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <returns>The status response.</returns>
     public static IResult Status(HttpContext context)
     {
         var accessToken = context.Session.GetString("accessToken");
@@ -55,6 +72,14 @@ public static class ApiEndpoints
             Registered: !string.IsNullOrEmpty(clientId)));
     }
 
+    /// <summary>
+    /// Scrapes album info from a Bandcamp URL.
+    /// </summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <param name="request">The scrape request.</param>
+    /// <param name="bandcampService">The Bandcamp service.</param>
+    /// <param name="loggerFactory">The logger factory.</param>
+    /// <returns>The scrape response.</returns>
     public static async Task<IResult> Scrape(
         HttpContext context,
         ScrapeRequest request,
@@ -80,11 +105,20 @@ public static class ApiEndpoints
         }
     }
 
+    /// <summary>
+    /// Posts a Bandcamp album to Mastodon.
+    /// </summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <param name="request">The post request.</param>
+    /// <param name="mastodonService">The Mastodon service.</param>
+    /// <param name="imageService">The image service.</param>
+    /// <param name="loggerFactory">The logger factory.</param>
+    /// <returns>The post response.</returns>
     public static async Task<IResult> Post(
         HttpContext context,
         PostRequest request,
         IMastodonService mastodonService,
-        IHttpClientFactory httpClientFactory,
+        IImageService imageService,
         ILoggerFactory loggerFactory)
     {
         var accessToken = context.Session.GetString("accessToken");
@@ -97,8 +131,7 @@ public static class ApiEndpoints
 
         try
         {
-            var client = httpClientFactory.CreateClient("Default");
-            var imageData = await client.GetByteArrayAsync(request.ImageUrl);
+            var imageData = await imageService.DownloadImageAsync(request.ImageUrl);
 
             var mediaId = await mastodonService.UploadMediaAsync(instance, accessToken, imageData, request.AltText);
             var (statusId, url) = await mastodonService.PostStatusAsync(instance, accessToken, request.Text, mediaId);

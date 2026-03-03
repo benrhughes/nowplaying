@@ -5,8 +5,17 @@ using BcMasto.Filters;
 using BcMasto.Models;
 using BcMasto.Services;
 
+/// <summary>
+/// Extensions for <see cref="IServiceCollection"/> and <see cref="WebApplication"/>.
+/// </summary>
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Adds application services to the DI container.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="config">The app configuration.</param>
+    /// <returns>The modified service collection.</returns>
     public static IServiceCollection AddServices(this IServiceCollection services, AppConfig config)
     {
         services.AddDistributedMemoryCache();
@@ -19,27 +28,27 @@ public static class ServiceCollectionExtensions
             options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         });
 
-        services.AddHttpClient("Default")
-            .ConfigureHttpClient(client =>
-            {
-                client.Timeout = TimeSpan.FromSeconds(15);
-                client.DefaultRequestHeaders.UserAgent.ParseAdd("BcMasto/1.0");
-            });
+        // Common configuration for all typed clients
+        Action<HttpClient> configureClient = client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("BcMasto/1.0");
+        };
 
-        services.AddScoped<IMastodonService>(sp =>
-            new MastodonService(
-                sp.GetRequiredService<IHttpClientFactory>(),
-                sp.GetRequiredService<ILogger<MastodonService>>(),
-                config.RedirectUri));
+        services.AddHttpClient<IImageService, ImageService>(configureClient);
 
-        services.AddScoped<IBandcampService>(sp =>
-            new BandcampService(
-                sp.GetRequiredService<IHttpClientFactory>(),
-                sp.GetRequiredService<ILogger<BandcampService>>()));
+        services.AddHttpClient<IMastodonService, MastodonService>(configureClient);
+
+        services.AddHttpClient<IBandcampService, BandcampService>(configureClient);
 
         return services;
     }
 
+    /// <summary>
+    /// Maps the application endpoints.
+    /// </summary>
+    /// <param name="app">The web application.</param>
+    /// <returns>The modified web application.</returns>
     public static WebApplication MapEndpoints(this WebApplication app)
     {
         var authGroup = app.MapGroup("/auth")

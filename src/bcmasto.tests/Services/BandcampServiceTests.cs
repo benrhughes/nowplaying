@@ -1,22 +1,15 @@
 using BcMasto.Models;
 using BcMasto.Services;
-using Microsoft.Extensions.Logging;
-using Moq;
 using Xunit;
 
 namespace BcMasto.Tests.Services;
 
 public class BandcampServiceTests
 {
-    private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
-    private readonly Mock<ILogger<BandcampService>> _loggerMock;
-    private readonly BandcampService _service;
-
-    public BandcampServiceTests()
+    private BandcampService CreateService(string? content, System.Net.HttpStatusCode statusCode = System.Net.HttpStatusCode.OK)
     {
-        _httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        _loggerMock = new Mock<ILogger<BandcampService>>();
-        _service = new BandcampService(_httpClientFactoryMock.Object, _loggerMock.Object);
+        var httpClient = new HttpClient(new MockHttpMessageHandler(content, statusCode));
+        return new BandcampService(httpClient);
     }
 
     [Fact]
@@ -33,12 +26,10 @@ public class BandcampServiceTests
             </head>
             </html>
             """;
-
-        var httpClient = new HttpClient(new MockHttpMessageHandler(htmlContent));
-        _httpClientFactoryMock.Setup(f => f.CreateClient("Default")).Returns(httpClient);
+        var service = CreateService(htmlContent);
 
         // Act
-        var result = await _service.ScrapeAsync(url);
+        var result = await service.ScrapeAsync(url);
 
         // Assert
         Assert.Equal("Test Album – Test Artist", result.Title);
@@ -63,12 +54,10 @@ public class BandcampServiceTests
             </head>
             </html>
             """;
-
-        var httpClient = new HttpClient(new MockHttpMessageHandler(htmlContent));
-        _httpClientFactoryMock.Setup(f => f.CreateClient("Default")).Returns(httpClient);
+        var service = CreateService(htmlContent);
 
         // Act
-        var result = await _service.ScrapeAsync(url);
+        var result = await service.ScrapeAsync(url);
 
         // Assert
         Assert.Equal("Cool Artist", result.Artist);
@@ -88,12 +77,10 @@ public class BandcampServiceTests
             </head>
             </html>
             """;
-
-        var httpClient = new HttpClient(new MockHttpMessageHandler(htmlContent));
-        _httpClientFactoryMock.Setup(f => f.CreateClient("Default")).Returns(httpClient);
+        var service = CreateService(htmlContent);
 
         // Act
-        var result = await _service.ScrapeAsync(url);
+        var result = await service.ScrapeAsync(url);
 
         // Assert
         Assert.Equal("Fallback Title", result.Title);
@@ -114,12 +101,10 @@ public class BandcampServiceTests
             </head>
             </html>
             """;
-
-        var httpClient = new HttpClient(new MockHttpMessageHandler(htmlContent));
-        _httpClientFactoryMock.Setup(f => f.CreateClient("Default")).Returns(httpClient);
+        var service = CreateService(htmlContent);
 
         // Act
-        var result = await _service.ScrapeAsync(url);
+        var result = await service.ScrapeAsync(url);
 
         // Assert
         Assert.Equal("", result.Artist);
@@ -131,11 +116,10 @@ public class BandcampServiceTests
     {
         // Arrange
         var url = "https://example.bandcamp.com/album/test";
-        var httpClient = new HttpClient(new MockHttpMessageHandler(null, System.Net.HttpStatusCode.NotFound));
-        _httpClientFactoryMock.Setup(f => f.CreateClient("Default")).Returns(httpClient);
+        var service = CreateService(null, System.Net.HttpStatusCode.NotFound);
 
         // Act & Assert
-        await Assert.ThrowsAsync<HttpRequestException>(() => _service.ScrapeAsync(url));
+        await Assert.ThrowsAsync<HttpRequestException>(() => service.ScrapeAsync(url));
     }
 
     private class MockHttpMessageHandler : HttpMessageHandler

@@ -27,17 +27,17 @@ bcmasto/
 │   │   │   └── HttpContentExtensions.cs
 │   │   ├── Properties/
 │   │   │   └── launchSettings.json # Development settings
-│   │   └── appsettings.json        # Configuration
+│   │   ├── appsettings.json        # Configuration
+│   │   └── wwwroot/                # Frontend static files (served by ASP.NET Core)
+│   │       ├── index.html          # HTML template
+│   │       ├── app.js              # JavaScript application logic
+│   │       └── style.css           # CSS styles
 │   ├── bcmasto.tests/              # Unit tests
 │   │   ├── bcmasto.tests.csproj
 │   │   ├── Endpoints/
 │   │   ├── Services/
 │   │   └── Models/
 │   └── bcmasto.sln                 # Solution file
-├── wwwroot/                        # Frontend static files (served by ASP.NET Core)
-│   ├── index.html                  # HTML template
-│   ├── app.js                      # JavaScript application logic
-│   └── style.css                   # CSS styles
 ├── Dockerfile                      # Docker build configuration
 ├── docker-compose.yml              # Docker Compose configuration
 ├── .env.example                    # Environment variable template
@@ -104,9 +104,9 @@ The backend is an ASP.NET Core application structured with dependency injection 
 
 #### Static Files
 
-- All files in `/wwwroot` (mapped from `/client` during build) are served as static files from the root path
+- All files in `src/bcmasto/wwwroot` are served as static files from the root path.
 
-### Frontend (client/app.js)
+### Frontend (`wwwroot/app.js`)
 
 The frontend is a single-page application (SPA) with a class-based architecture:
 
@@ -146,8 +146,8 @@ Manages the application state and UI:
 11. User is logged in
 
 **Code Location**: 
-- Registration: [ApiEndpoints.cs](src/bcmasto/Endpoints/ApiEndpoints.cs#L8-L47)
-- Login/Callback: [AuthEndpoints.cs](src/bcmasto/Endpoints/AuthEndpoints.cs#L6-L59)
+- Registration: [ApiEndpoints.cs](src/bcmasto/Endpoints/ApiEndpoints.cs)
+- Login/Callback: [AuthEndpoints.cs](src/bcmasto/Endpoints/AuthEndpoints.cs)
 
 ### Bandcamp Metadata Extraction
 
@@ -163,7 +163,7 @@ The `/api/scrape` endpoint:
 5. Parses artist/album from title using regex
 6. Returns JSON with extracted data
 
-**Code Location**: [BandcampService.cs](src/bcmasto/Services/BandcampService.cs) and [ApiEndpoints.cs](src/bcmasto/Endpoints/ApiEndpoints.cs#L65-L98)
+**Code Location**: [BandcampService.cs](src/bcmasto/Services/BandcampService.cs) and [ApiEndpoints.cs](src/bcmasto/Endpoints/ApiEndpoints.cs)
 
 **Parsing Logic**: The regex tries two patterns in [ParseArtistAndAlbum()](src/bcmasto/Services/BandcampService.cs#L45-L62):
 - `Album – Artist` format
@@ -183,7 +183,7 @@ The `/api/post` endpoint:
 6. Creates a status with the media ID attached
 7. Returns the status URL
 
-**Code Location**: [ApiEndpoints.cs](src/bcmasto/Endpoints/ApiEndpoints.cs#L100-L135) and [MastodonService.cs](src/bcmasto/Services/MastodonService.cs#L74-L110)
+**Code Location**: [ApiEndpoints.cs](src/bcmasto/Endpoints/ApiEndpoints.cs) and [MastodonService.cs](src/bcmasto/Services/MastodonService.cs)
 
 **Note**: Uses .NET's built-in MultipartFormDataContent for multipart uploads.
 
@@ -197,7 +197,7 @@ Sessions use ASP.NET Core's distributed session with the following flow:
 4. Cookie expires after 24 hours (configurable)
 5. In production, consider using a persistent session store (Redis, SQL Server, etc.)
 
-**Configuration Location**: [ServiceCollectionExtensions.cs](src/bcmasto/Extensions/ServiceCollectionExtensions.cs#L10-L20)
+**Configuration Location**: [ServiceCollectionExtensions.cs](src/bcmasto/Extensions/ServiceCollectionExtensions.cs)
 
 Current session settings:
 - **IdleTimeout**: 24 hours
@@ -232,7 +232,7 @@ Application will start on `http://localhost:4444`.
 
 ### Making Changes
 
-- **Frontend**: Edit files in `/client` - changes appear on browser refresh
+- **Frontend**: Edit files in `src/bcmasto/wwwroot` - changes appear on browser refresh
 - **Backend**: Edit C# files - the app uses hot reload (restart to apply changes)
 - **Configuration**: Edit `appsettings.Development.json` for dev settings, `.env` for environment variables
 
@@ -310,23 +310,23 @@ To add new request/response types:
 
 The app requests `write:media` and `write:statuses` scopes. To change:
 
-1. Edit the scope list in [AuthEndpoints.cs](src/bcmasto/Endpoints/AuthEndpoints.cs#L21):
+1. Edit the scope list in [AuthEndpoints.cs](src/bcmasto/Endpoints/AuthEndpoints.cs):
    ```csharp
    scope=write:media%20write:statuses
    ```
 2. URL-encode additional scopes with `%20` as separator
-3. Update [MastodonService.cs](src/bcmasto/Services/MastodonService.cs#L27) registration if needed
+3. Update [MastodonService.cs](src/bcmasto/Services/MastodonService.cs) registration if needed
 
 ### Parsing Different Sites
 
 To adapt the scraper for other sites:
 
-1. Modify [BandcampService.ScrapeAsync()](src/bcmasto/Services/BandcampService.cs#L13-L42)
+1. Modify [BandcampService.ScrapeAsync()](src/bcmasto/Services/BandcampService.cs)
 2. Use HtmlAgilityPack's XPath queries to find elements:
    ```csharp
    var titleNode = doc.DocumentNode.SelectSingleNode("//meta[@property='og:title']");
    ```
-3. Update validation in [ApiEndpoints.cs](src/bcmasto/Endpoints/ApiEndpoints.cs#L83-L89) to accept other domains
+3. Update validation in [ApiEndpoints.cs](src/bcmasto/Endpoints/ApiEndpoints.cs) to accept other domains
 
 Example for other metadata sources:
 ```csharp
@@ -489,6 +489,23 @@ Before going live:
 - [ ] Set appropriate ASPNETCORE_URLS in production
 - [ ] Configure health check endpoint for load balancers
 - [ ] Test graceful shutdown and restart
+
+## History and Comparison with Node.js
+
+This project was originally ported from a Node.js implementation. Below is a comparison of how the two stacks handle various aspects of the application.
+
+| Aspect | Node.js | C# (Current) |
+|--------|---------|-----|
+| **Framework** | Express | ASP.NET Core Minimal APIs |
+| **Dependencies** | 5 packages | 2 primary packages (built-in most functionality) |
+| **Session** | express-session | Built-in IDistributedCache |
+| **HTTP Client** | Axios | HttpClient (Typed Clients) |
+| **HTML Parsing** | Cheerio | HtmlAgilityPack |
+| **Type Safety** | Dynamic/Optional | Strict by default |
+| **Async Model** | Promise-based | async/await (Task-based) |
+| **Dev Server** | node --watch | dotnet watch |
+| **Warm start** | Instant | ~1-2 seconds |
+| **Memory usage** | ~50MB | ~80-100MB |
 
 ## Questions or Issues?
 

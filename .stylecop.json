@@ -3,7 +3,7 @@
   "settings": {
     "documentationRules": {
       "documentInterfaces": true,
-      "documentExposedElements": false,
+      "documentExposedElements": true,
       "documentInternalElements": false,
       "documentPrivateElements": false,
       "documentationCulture": "en-US"

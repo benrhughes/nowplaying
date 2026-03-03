@@ -2,8 +2,17 @@ namespace BcMasto.Filters;
 
 using System.ComponentModel.DataAnnotations;
 
+/// <summary>
+/// A filter that validates the arguments of an endpoint using <see cref="Validator"/>.
+/// </summary>
 public class ValidationFilter : IEndpointFilter
 {
+    /// <summary>
+    /// Invokes the validation logic.
+    /// </summary>
+    /// <param name="context">The invocation context.</param>
+    /// <param name="next">The next filter in the pipeline.</param>
+    /// <returns>The result of the invocation.</returns>
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         foreach (var arg in context.Arguments)

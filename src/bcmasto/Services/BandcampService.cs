@@ -4,22 +4,17 @@ using HtmlAgilityPack;
 
 namespace BcMasto.Services;
 
-public class BandcampService : IBandcampService
+/// <summary>
+/// Service for scraping Bandcamp album information.
+/// </summary>
+/// <param name="httpClient">The HTTP client.</param>
+public class BandcampService(HttpClient httpClient)
+    : IBandcampService
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-
-    private readonly ILogger<BandcampService> _logger;
-
-    public BandcampService(IHttpClientFactory httpClientFactory, ILogger<BandcampService> logger)
-    {
-        _httpClientFactory = httpClientFactory;
-        _logger = logger;
-    }
-
+    /// <inheritdoc/>
     public async Task<ScrapeResponse> ScrapeAsync(string url)
     {
-        var client = _httpClientFactory.CreateClient("Default");
-        var htmlContent = await client.GetStringAsync(url);
+        var htmlContent = await httpClient.GetStringAsync(url);
 
         var doc = new HtmlDocument();
         doc.LoadHtml(htmlContent);

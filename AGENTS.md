@@ -1,0 +1,28 @@
+# Instructions for AI Agents - BcMasto
+
+## 🛡️ General Rules
+- **Permissions**: NEVER run `scp`, `rsync`, or perform `git` write operations (commit, push, etc.) without explicit permission.
+- **Workflow**: ALWAYS run `dotnet build` AND `dotnet test` after code changes.
+- **Cleanup**: ALWAYS remove any temporary build or test output files created (e.g., `build_output_*.txt`, `test_output_*.txt`) once they are no longer needed.
+- **Warnings**: ALWAYS fix compilation errors and StyleCop warnings immediately. Treat warnings as errors.
+
+## 🚀 .NET 10 & Architecture
+- **Framework**: ASP.NET Core Minimal APIs.
+- **Modern Features**: Use `C# 14` features where appropriate, such as **Primary Constructors** for DI.
+- **HTTP**: Always use **Typed Clients** (e.g., `services.AddHttpClient<IService, Service>()`) and avoid magic strings like `"Default"`.
+- **Configuration**: Use `AppConfig.cs` for strongly-typed settings derived from environment variables.
+
+## 📝 Coding Standards (StyleCop Alignment)
+- **Documentation**: All public and protected members MUST have XML documentation (`/// <summary>`) to satisfy rule **SA1600**. Use `<inheritdoc/>` for implementation methods.
+- **Spacing**: Maintain a single blank line between class members, including fields (satisfies **SA1516**).
+- **Validation**: Use model validation and the `ValidationFilter` for request validation on Minimal API endpoints.
+- **JSON**: Prefer `System.Text.Json` over `Newtonsoft.Json`.
+
+## 🧪 Testing
+- **Framework**: xUnit and Moq.
+- **Coverage**: ALWAYS add unit test coverage for new code changes in the `bcmasto.tests` project.
+- **Mocks**: When testing services that use `HttpClient`, use `MockHttpMessageHandler` and a real `HttpClient` instance rather than mocking `IHttpClientFactory`.
+
+## 📖 Related Documentation
+- **Onboarding**: Read [SETUP.md](SETUP.md) for environment configuration.
+- **Architecture**: See [DEVELOPMENT.md](DEVELOPMENT.md) for deep-dive technical details.

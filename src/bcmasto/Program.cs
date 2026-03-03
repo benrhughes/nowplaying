@@ -1,15 +1,19 @@
+using System.ComponentModel.DataAnnotations;
 using BcMasto.Extensions;
 using BcMasto.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configuration
-var config = new AppConfig
+var config = builder.Configuration.Get<AppConfig>() ?? new AppConfig();
+
+// Validate configuration on startup
+var validationResults = new List<ValidationResult>();
+if (!Validator.TryValidateObject(config, new ValidationContext(config), validationResults, validateAllProperties: true))
 {
-    Port = int.TryParse(Environment.GetEnvironmentVariable("PORT"), out var port) ? port : 4444,
-    RedirectUri = Environment.GetEnvironmentVariable("REDIRECT_URI") ?? "http://localhost:4444/auth/callback",
-    SessionSecret = Environment.GetEnvironmentVariable("SESSION_SECRET") ?? "dev-secret-change-in-production"
-};
+    var errors = string.Join(", ", validationResults.Select(v => v.ErrorMessage));
+    throw new InvalidOperationException($"Application configuration is invalid: {errors}");
+}
 
 // Services
 builder.Services.AddSingleton(config);
