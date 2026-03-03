@@ -19,7 +19,7 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
         {
             client_name = AppConfig.AppName,
             redirect_uris = redirectUri,
-            scopes = "write:media write:statuses"
+            scopes = "write:media write:statuses",
         };
 
         var response = await httpClient.PostAsJsonAsync($"{instance}/api/v1/apps", registerData);
@@ -47,7 +47,7 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
             { "client_secret", clientSecret },
             { "redirect_uri", redirectUri },
             { "grant_type", "authorization_code" },
-            { "code", code }
+            { "code", code },
         };
 
         var content = new FormUrlEncodedContent(parameters);

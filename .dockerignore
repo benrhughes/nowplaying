@@ -3,10 +3,10 @@
 .gitignore
 
 # Build outputs
-bin/
-obj/
-.vs/
-.vscode/
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
 
 # Node
 node_modules/
@@ -31,3 +31,4 @@ Thumbs.db
 docker-compose.yml
 Dockerfile*
 .dockerignore
+deploy.sh

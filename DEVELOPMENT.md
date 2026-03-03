@@ -507,6 +507,16 @@ This project was originally ported from a Node.js implementation. Below is a com
 | **Warm start** | Instant | ~1-2 seconds |
 | **Memory usage** | ~50MB | ~80-100MB |
 
+## Deployment
+
+A `deploy.sh` script is provided in the root to quickly sync code to the production server and trigger a build.
+
+```bash
+./deploy.sh
+```
+
+It uses `rsync` to only transfer modified files and respects `.gitignore` rules, ensuring `bin/` and `obj/` folders are not transferred.
+
 ## Questions or Issues?
 
 Check:

@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bandcamp to Mastodon</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="container">
     <header>
       <h1>Bandcamp to Mastodon</h1>
-      <div id="auth-buttons">
+      <div id="auth-status">
         <span id="logged-in-text" style="display:none;"></span>
         <a id="logout-btn" href="/auth/logout" class="btn btn-secondary" style="display:none;">Logout</a>
       </div>
@@ -23,13 +25,7 @@
         <form id="instance-form">
           <div class="form-group">
             <label for="instance-url">Mastodon Instance URL</label>
-            <input 
-              type="url" 
-              id="instance-url" 
-              name="instance-url" 
-              placeholder="https://mastodon.social" 
-              required
-            >
+            <input type="url" id="instance-url" name="instance-url" placeholder="https://mastodon.social" required>
             <small>Enter the URL of your Mastodon instance (e.g., https://fosstodon.org, https://techhub.social)</small>
           </div>
           <button type="submit" class="btn btn-primary">Connect to Instance</button>
@@ -38,7 +34,7 @@
       </div>
 
       <!-- Login Prompt -->
-      <div id="login-prompt-card" class="card">
+      <div id="login-prompt-card" class="card" style="display:none;">
         <div class="login-prompt">
           <p>You need to authenticate with Mastodon to use this tool.</p>
           <a href="/auth/login" class="btn btn-primary">Login with Mastodon</a>
@@ -51,13 +47,7 @@
         <form id="scrape-form">
           <div class="form-group">
             <label for="url">Bandcamp Album URL</label>
-            <input 
-              type="url" 
-              id="url" 
-              name="url" 
-              placeholder="https://artist.bandcamp.com/album/..." 
-              required
-            >
+            <input type="url" id="url" name="url" placeholder="https://artist.bandcamp.com/album/..." required>
           </div>
           <button type="submit" class="btn btn-primary">Fetch Album Info</button>
         </form>
@@ -67,7 +57,7 @@
       <!-- Preview Section -->
       <div id="preview-card" class="card" style="display:none;">
         <h2>Preview & Edit</h2>
-        
+
         <div class="preview-section">
           <img id="preview-image" src="" alt="Album cover" class="preview-image" style="display:none;">
           <p>
@@ -108,4 +98,5 @@
 
   <script src="app.js" defer></script>
 </body>
+
 </html>

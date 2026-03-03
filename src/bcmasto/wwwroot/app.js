@@ -130,15 +130,25 @@ class BcMasto {
 
   updateUI() {
     // Update header auth buttons
-    if (this.authenticated) {
-      this.loginBtn.style.display = 'none';
-      this.logoutBtn.style.display = 'inline-block';
-      this.loggedInText.textContent = `Logged in to ${this.instance ?? 'Mastodon'}`;
-      this.loggedInText.style.display = 'inline-block';
-    } else {
-      this.loginBtn.style.display = 'inline-block';
-      this.logoutBtn.style.display = 'none';
-      this.loggedInText.style.display = 'none';
+    if (this.logoutBtn) {
+      this.logoutBtn.style.display = this.authenticated ? 'inline-block' : 'none';
+    }
+
+    if (this.loggedInText) {
+      if (this.authenticated && this.instance) {
+        const displayInstance = this.instance.replace(/^https?:\/\//, '').replace(/\/$/, '');
+        this.loggedInText.innerHTML = `Logged in to <a href="${this.instance}" target="_blank" class="instance-link">${displayInstance}</a>`;
+        this.loggedInText.style.display = 'inline-block';
+      } else if (this.authenticated) {
+        this.loggedInText.textContent = 'Logged in to Mastodon';
+        this.loggedInText.style.display = 'inline-block';
+      } else {
+        this.loggedInText.style.display = 'none';
+      }
+    }
+
+    if (this.loginBtn) {
+      this.loginBtn.style.display = this.authenticated ? 'none' : 'inline-block';
     }
 
     // Update main content sections
@@ -194,7 +204,7 @@ class BcMasto {
 
     // Update preview
     this.updatePreviewDisplay();
-    
+
     // Reset button states
     this.postBtn.disabled = false;
     this.postMessage.textContent = '';

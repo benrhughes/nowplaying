@@ -1,17 +1,66 @@
-node_modules/
+# .NET
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/*.user
+**/*.suo
+**/*.sln.iml
+**/.idea/
+
+# Build results
+**/Debug/
+**/DebugPublic/
+**/Release/
+**/Releases/
+**/x64/
+**/x86/
+**/arm/
+**/arm64/
+**/bld/
+**/Log/
+**/Logs/
+
+# Visual Studio
+**/*.vcxproj.filters
+**/*.vcxproj.user
+
+# NuGet
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+.nuget/
+
+# Local Config
+src/bcmasto/appsettings.Development.json
+src/bcmasto/appsettings.*.json
+!src/bcmasto/appsettings.json
+src/bcmasto/Properties/launchSettings.json
 .env
 .env.local
 .env.*.local
-*.log
+.env.production
+
+# Node (from original project)
+node_modules/
+dist/
+build/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Test results
+**/TestResults/
+*.trx
+
+# OS / IDE
 .DS_Store
-.vscode/
-.idea/
+Thumbs.db
 *.swp
 *.swo
 *~
-.env.production
-dist/
-build/
+*.log
+
+# Scripts
+deploy.sh

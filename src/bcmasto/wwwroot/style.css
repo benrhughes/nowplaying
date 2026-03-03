@@ -40,6 +40,16 @@ header h1 {
   align-items: center;
 }
 
+.instance-link {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.instance-link:hover {
+  text-decoration: underline;
+}
+
 .btn {
   padding: 10px 20px;
   border: none;

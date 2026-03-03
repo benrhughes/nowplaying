@@ -47,19 +47,34 @@ public record PostResponse(bool Success, string StatusId, string Url);
 public record RegistrationResponse(bool Success, string Instance);
 
 // Internal models for Mastodon API
+/// <summary>
+/// Internal response for application registration.
+/// </summary>
 internal record AppRegistrationResponse(
     string? clientId = null,
     string? clientSecret = null,
     string? id = null,
     string? name = null)
 {
+    /// <summary>
+    /// Gets or sets the client ID.
+    /// </summary>
     [System.Text.Json.Serialization.JsonPropertyName("client_id")]
     public string? Client_id { get; set; }
 
+    /// <summary>
+    /// Gets or sets the client secret.
+    /// </summary>
     [System.Text.Json.Serialization.JsonPropertyName("client_secret")]
     public string? Client_secret { get; set; }
 }
 
+/// <summary>
+/// Internal response for media upload.
+/// </summary>
 internal record MediaResponse(string id, string? type = null, string? url = null);
 
+/// <summary>
+/// Internal response for status post.
+/// </summary>
 internal record StatusMastodonResponse(string id, string? url = null, string? content = null);
