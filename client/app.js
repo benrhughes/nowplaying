@@ -1,6 +1,7 @@
 class BcMasto {
   constructor() {
     this.authenticated = false;
+    this.registered = false;
     this.scrapedData = null;
     this.cacheElements();
     this.bindEventListeners();
@@ -14,9 +15,14 @@ class BcMasto {
     this.loggedInText = document.getElementById('logged-in-text');
 
     // Content sections
+    this.instanceCard = document.getElementById('instance-card');
     this.loginPrompt = document.getElementById('login-prompt-card');
     this.formCard = document.getElementById('form-card');
     this.previewCard = document.getElementById('preview-card');
+
+    // Instance selection
+    this.instanceInput = document.getElementById('instance-url');
+    this.instanceMessage = document.getElementById('instance-message');
 
     // Form elements
     this.urlInput = document.getElementById('url');
@@ -34,6 +40,12 @@ class BcMasto {
   }
 
   bindEventListeners() {
+    // Instance selection
+    document.getElementById('instance-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.registerInstance();
+    });
+
     // Form submission
     document.getElementById('scrape-form').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -78,8 +90,40 @@ class BcMasto {
       const response = await fetch('/api/status');
       const data = await response.json();
       this.authenticated = data.authenticated;
+      this.registered = data.registered;
     } catch (error) {
       console.error('Auth check failed:', error);
+    }
+  }
+
+  async registerInstance() {
+    const instanceUrl = this.instanceInput.value.trim();
+
+    if (!instanceUrl) {
+      this.setMessage(this.instanceMessage, 'Please enter a Mastodon instance URL', 'error');
+      return;
+    }
+
+    this.setMessage(this.instanceMessage, 'Registering with instance', 'info');
+
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instance: instanceUrl })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to register');
+      }
+
+      this.registered = true;
+      this.instanceInput.value = '';
+      this.instanceMessage.textContent = '';
+      this.updateUI();
+    } catch (error) {
+      this.setMessage(this.instanceMessage, `Error: ${error.message}`, 'error');
     }
   }
 
@@ -96,17 +140,30 @@ class BcMasto {
     }
 
     // Update main content sections
-    if (!this.authenticated) {
+    // Priority 1: Show instance selection if not registered
+    if (!this.registered) {
+      this.instanceCard.style.display = 'block';
+      this.loginPrompt.style.display = 'none';
+      this.formCard.style.display = 'none';
+      this.previewCard.style.display = 'none';
+    }
+    // Priority 2: Show login prompt if not authenticated
+    else if (!this.authenticated) {
+      this.instanceCard.style.display = 'none';
       this.loginPrompt.style.display = 'block';
       this.formCard.style.display = 'none';
       this.previewCard.style.display = 'none';
-    } else if (!this.scrapedData) {
+    }
+    // Priority 3: Show form or preview
+    else if (!this.scrapedData) {
+      this.instanceCard.style.display = 'none';
       this.loginPrompt.style.display = 'none';
       this.formCard.style.display = 'block';
       this.previewCard.style.display = 'none';
       this.urlInput.value = '';
       this.scrapeMessage.textContent = '';
     } else {
+      this.instanceCard.style.display = 'none';
       this.loginPrompt.style.display = 'none';
       this.formCard.style.display = 'none';
       this.previewCard.style.display = 'block';

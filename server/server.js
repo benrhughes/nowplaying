@@ -21,10 +21,8 @@ const app = express();
 
 // Environment variables
 const PORT = process.env.PORT || 3000;
-const MASTODON_INSTANCE = process.env.MASTODON_INSTANCE || 'https://mastodon.social';
-const CLIENT_ID = process.env.MASTODON_CLIENT_ID;
-const CLIENT_SECRET = process.env.MASTODON_CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI || 'http://localhost:3000/auth/callback';
+const APP_NAME = 'BcMasto';
 
 // Session configuration
 app.use(session({
@@ -44,28 +42,39 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // OAuth routes
 app.get('/auth/login', (req, res) => {
-  const authUrl = `${MASTODON_INSTANCE}/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=write:media%20write:statuses`;
+  const { instance, clientId } = req.session;
+  
+  if (!instance || !clientId) {
+    return res.status(400).json({ error: 'Instance not configured. Please select an instance first.' });
+  }
+
+  const authUrl = `${instance}/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=write:media%20write:statuses`;
   res.redirect(authUrl);
 });
 
 app.get('/auth/callback', async (req, res) => {
   const { code } = req.query;
+  const { instance, clientId, clientSecret } = req.session;
   
   if (!code) {
     return res.status(400).json({ error: 'No authorization code provided' });
   }
 
+  if (!instance || !clientId || !clientSecret) {
+    return res.status(400).json({ error: 'Session invalid. Please start the login process again.' });
+  }
+
   try {
     // OAuth endpoints expect form-encoded data, not JSON
     const params = new URLSearchParams({
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
+      client_id: clientId,
+      client_secret: clientSecret,
       redirect_uri: REDIRECT_URI,
       grant_type: 'authorization_code',
       code
     });
 
-    const tokenResponse = await axios.post(`${MASTODON_INSTANCE}/oauth/token`, params, {
+    const tokenResponse = await axios.post(`${instance}/oauth/token`, params, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       timeout: 10000,
       httpsAgent
@@ -95,10 +104,59 @@ app.get('/auth/logout', (req, res) => {
 });
 
 // API routes
+app.post('/api/register', async (req, res) => {
+  let { instance } = req.body;
+
+  if (!instance) {
+    return res.status(400).json({ error: 'Mastodon instance URL is required' });
+  }
+
+  // Ensure the URL is valid and properly formatted
+  try {
+    const url = new URL(instance);
+    instance = url.origin; // Normalize to origin (no path)
+  } catch {
+    return res.status(400).json({ error: 'Invalid instance URL' });
+  }
+
+  try {
+    // Register the app on the Mastodon instance
+    const registerResponse = await axios.post(`${instance}/api/v1/apps`, {
+      client_name: APP_NAME,
+      redirect_uris: REDIRECT_URI,
+      scopes: 'write:media write:statuses'
+    }, {
+      timeout: 10000,
+      httpsAgent
+    });
+
+    const { client_id, client_secret } = registerResponse.data;
+
+    // Store instance and credentials in session
+    req.session.instance = instance;
+    req.session.clientId = client_id;
+    req.session.clientSecret = client_secret;
+
+    req.session.save((err) => {
+      if (err) return res.status(500).json({ error: 'Session save failed' });
+      res.json({ success: true, instance });
+    });
+  } catch (error) {
+    console.error('App registration error:', {
+      instance,
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    res.status(500).json({ error: 'Failed to register app on instance. Verify the instance URL.' });
+  }
+});
+
 app.get('/api/status', (req, res) => {
   res.json({
     authenticated: !!req.session.accessToken,
-    instance: MASTODON_INSTANCE
+    instance: req.session.instance,
+    registered: !!req.session.clientId
   });
 });
 
@@ -167,7 +225,7 @@ app.post('/api/scrape', async (req, res) => {
 });
 
 app.post('/api/post', async (req, res) => {
-  if (!req.session.accessToken) {
+  if (!req.session.accessToken || !req.session.instance) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
@@ -179,7 +237,7 @@ app.post('/api/post', async (req, res) => {
 
   try {
     const mastodonApi = axios.create({
-      baseURL: `${MASTODON_INSTANCE}/api/v1`,
+      baseURL: `${req.session.instance}/api/v1`,
       headers: {
         Authorization: `Bearer ${req.session.accessToken}`
       },
@@ -230,7 +288,7 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Mastodon instance: ${MASTODON_INSTANCE}`);
+  console.log(`Redirect URI: ${REDIRECT_URI}`);
 });
 
 export default app;

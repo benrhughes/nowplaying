@@ -18,6 +18,26 @@
     </header>
 
     <main id="app-content">
+      <!-- Instance Selection -->
+      <div id="instance-card" class="card" style="display:none;">
+        <h2>Select Your Mastodon Instance</h2>
+        <form id="instance-form">
+          <div class="form-group">
+            <label for="instance-url">Mastodon Instance URL</label>
+            <input 
+              type="url" 
+              id="instance-url" 
+              name="instance-url" 
+              placeholder="https://mastodon.social" 
+              required
+            >
+            <small>Enter the URL of your Mastodon instance (e.g., https://fosstodon.org, https://techhub.social)</small>
+          </div>
+          <button type="submit" class="btn btn-primary">Connect to Instance</button>
+        </form>
+        <div id="instance-message"></div>
+      </div>
+
       <!-- Login Prompt -->
       <div id="login-prompt-card" class="card">
         <div class="login-prompt">
