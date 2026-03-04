@@ -9,9 +9,9 @@ export default {
                     <input type="date" v-model="until">
                 </div>
             </div>
-            <button @click="search" class="btn btn-primary" :disabled="loading">
-                <span v-if="loading" class="loading" style="margin-right: 8px;"></span>
-                {{ loading ? 'Searching...' : 'Search #nowplaying' }}
+            <button @click="search" class="btn btn-primary" :disabled="loading || generating">
+                <span v-if="loading && !generating" class="loading" style="margin-right: 8px;"></span>
+                {{ loading && !generating ? 'Searching...' : 'Search #nowplaying' }}
             </button>
 
             <div v-if="error" class="message error">{{ error }}</div>
@@ -59,8 +59,10 @@ export default {
                     <h3>Share to Mastodon</h3>
                     
                     <div class="form-group">
-                        <label>Image Alt Text</label>
-                        <textarea v-model="shareAltText" rows="6" style="width: 100%; font-family: monospace; white-space: pre-wrap;"></textarea>
+                        <label>Image Alt Text <span :style="{color: altTextCharCount > 1500 ? '#d32f2f' : altTextCharCount > 1350 ? '#f57c00' : '#666'}">{{ altTextCharCount }}/1500</span></label>
+                        <textarea v-model="shareAltText" rows="6" style="width: 100%; font-family: monospace; white-space: pre-wrap;" maxlength="1500"></textarea>
+                        <div v-if="altTextCharCount > 1500" class="message error" style="margin-top: 8px; padding: 8px; margin-bottom: 0;">Alt text exceeds 1500 character limit by {{ altTextCharCount - 1500 }} characters</div>
+                        <div v-else-if="altTextCharCount > 1350" class="message info" style="margin-top: 8px; padding: 8px; margin-bottom: 0;">{{ 1500 - altTextCharCount }} characters remaining</div>
                     </div>
 
                     <div class="form-group">
@@ -77,7 +79,7 @@ export default {
 
                     <div style="margin-top: 15px;">
                         <button @click="toggleShareForm" class="btn btn-secondary">Cancel</button>
-                        <button @click="postComposite" class="btn btn-success" :disabled="shareLoading" style="margin-left: 10px;">
+                        <button @click="postComposite" class="btn btn-success" :disabled="shareLoading || altTextCharCount > 1500" style="margin-left: 10px;" :title="altTextCharCount > 1500 ? 'Alt text exceeds 1500 character limit' : ''">
                             <span v-if="shareLoading" class="loading" style="margin-right: 8px;"></span>
                             {{ shareLoading ? 'Posting...' : 'Post to Mastodon' }}
                         </button>
@@ -111,6 +113,11 @@ export default {
             shareLoading: false,
             shareError: null,
             shareSuccess: null
+        }
+    },
+    computed: {
+        altTextCharCount() {
+            return this.shareAltText.length;
         }
     },
     methods: {

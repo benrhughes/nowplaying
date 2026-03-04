@@ -89,6 +89,18 @@ describe('Review Component', () => {
     expect(wrapper.vm.compositeUrl).toBeTruthy();
   });
 
+  it('hides spinner on search button when composite is generating', async () => {
+    wrapper = mount(Review);
+    wrapper.vm.loading = false;
+    wrapper.vm.generating = true;
+    await wrapper.vm.$nextTick();
+
+    const button = wrapper.find('button.btn-primary');
+    expect(button.text()).toContain('Search #nowplaying');
+    expect(button.find('.loading').exists()).toBe(false);
+    expect(button.attributes('disabled')).toBeDefined();
+  });
+
   it('shows "no posts found" message when search returns empty', async () => {
     global.fetch.mockResolvedValueOnce({
       ok: true,

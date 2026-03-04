@@ -142,6 +142,20 @@ public class MastodonServiceTests
     }
 
     [Fact]
+    public async Task UploadMediaAsync_WithAltTextExceedingLimit_ThrowsException()
+    {
+        // Arrange
+        var service = CreateService(JsonSerializer.Serialize(new { }));
+        var imageData = new byte[] { 0x89, 0x50, 0x4E, 0x47 };
+        var longAltText = new string('a', 1501); // 1501 characters, exceeds 1500 limit
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.UploadMediaAsync(Instance, "access-token", imageData, longAltText));
+        Assert.Contains("1500 character limit", exception.Message);
+    }
+
+    [Fact]
     public async Task PostStatusAsync_WithValidData_ReturnsStatusIdAndUrl()
     {
         // Arrange

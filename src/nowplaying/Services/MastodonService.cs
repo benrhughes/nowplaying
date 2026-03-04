@@ -100,6 +100,12 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
     {
         instance = instance.NormalizeInstance();
         accessToken = accessToken?.Trim() ?? throw new ArgumentException("Access token cannot be null or empty", nameof(accessToken));
+
+        if (!string.IsNullOrEmpty(altText) && altText.Length > 1500)
+        {
+            throw new ArgumentException($"Alt text exceeds the 1500 character limit (current length: {altText.Length})", nameof(altText));
+        }
+
         var request = new HttpRequestMessage(HttpMethod.Post, $"{instance}/api/v1/media");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
