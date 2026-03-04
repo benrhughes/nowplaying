@@ -42,7 +42,7 @@ describe('Post Component', () => {
     });
 
     await wrapper.vm.$nextTick();
-    const h2 = wrapper.findAll('h2').find(el => el.text().includes('Post a Song'));
+    const h2 = wrapper.findAll('h2').find(el => el.text().includes('Post an Album'));
     expect(h2).toBeDefined();
     expect(wrapper.find('input[type="url"]').exists()).toBe(true);
   });

@@ -122,6 +122,28 @@ public class BandcampServiceTests
         await Assert.ThrowsAsync<HttpRequestException>(() => service.ScrapeAsync(url));
     }
 
+    [Fact]
+    public async Task ScrapeAsync_WithCommaInAlbumName_TrimsTrailingComma()
+    {
+        // Arrange
+        var url = "https://example.bandcamp.com/album/test";
+        var htmlContent = """
+            <html>
+            <head>
+                <meta property="og:title" content="Test Album, by Test Artist" />
+            </head>
+            </html>
+            """;
+        var service = CreateService(htmlContent);
+
+        // Act
+        var result = await service.ScrapeAsync(url);
+
+        // Assert
+        Assert.Equal("Test Artist", result.Artist);
+        Assert.Equal("Test Album", result.Album);
+    }
+
     private class MockHttpMessageHandler : HttpMessageHandler
     {
         private readonly string? _content;

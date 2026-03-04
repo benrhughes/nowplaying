@@ -2,71 +2,80 @@ export default {
     template: `
         <div>
             <!-- Instance Selection (if not registered) -->
-            <div v-if="!registered" class="card">
-                <h2>Welcome to NowPlaying</h2>
+            <article v-if="!registered">
+                <header><strong>Welcome to NowPlaying</strong></header>
                 <p>Please enter your Mastodon instance URL to get started.</p>
-                <form @submit.prevent="registerInstance" class="form-group">
-                    <input v-model="instanceUrl" type="url" placeholder="https://mastodon.social" required>
-                    <button type="submit" class="btn btn-primary" :disabled="loading">Connect</button>
+                <form @submit.prevent="registerInstance">
+                    <label>
+                        Mastodon Instance
+                        <input v-model="instanceUrl" type="url" placeholder="https://mastodon.social" required>
+                    </label>
+                    <button type="submit" :aria-busy="loading" :disabled="loading">Connect</button>
                 </form>
-                <div v-if="error" class="message error">{{ error }}</div>
-            </div>
+                <p v-if="error" class="message-error">{{ error }}</p>
+            </article>
 
             <!-- Login Prompt (if not authenticated) -->
-            <div v-else-if="!authenticated" class="card">
-                <h2>Connect to Mastodon</h2>
+            <article v-else-if="!authenticated">
+                <header><strong>Connect to Mastodon</strong></header>
                 <p>You need to authorize this app to post to your account.</p>
-                <a href="/auth/login" class="btn btn-primary">Login with Mastodon</a>
-            </div>
+                <a href="/auth/login" role="button" class="w-100">Login with Mastodon</a>
+            </article>
 
             <!-- Scrape Form -->
-            <div v-else-if="!scrapedData" class="card">
-                <h2>Post a Song</h2>
-                <form @submit.prevent="scrape" class="form-group">
-                    <label>Bandcamp URL</label>
-                    <input v-model="url" type="url" placeholder="https://artist.bandcamp.com/album/..." required>
-                    <button type="submit" class="btn btn-primary" :disabled="loading">
-                        <span v-if="loading" class="loading" style="margin-right: 8px;"></span>
-                        {{ loading ? 'Loading...' : 'Scrape' }}
+            <article v-else-if="!scrapedData">
+                <header><strong>Post an Album</strong></header>
+                <form @submit.prevent="scrape">
+                    <label>
+                        Bandcamp URL
+                        <input v-model="url" type="url" placeholder="https://artist.bandcamp.com/album/..." required>
+                    </label>
+                    <button type="submit" :aria-busy="loading" :disabled="loading">
+                        {{ loading ? 'Getting Info...' : 'Get Album Info' }}
                     </button>
                 </form>
-                <div v-if="error" class="message error">{{ error }}</div>
-            </div>
+                <p v-if="error" class="message-error">{{ error }}</p>
+            </article>
 
             <!-- Preview & Post -->
-            <div v-else class="card">
-                <h2>Preview Post</h2>
+            <article v-else>
+                <header><strong>Preview Post</strong></header>
                 
-                <div class="form-group">
-                    <label>Artist</label>
+                <label>
+                    Artist
                     <input v-model="scrapedData.artist" @input="updatePreview">
-                </div>
+                </label>
                 
-                <div class="form-group">
-                    <label>Album</label>
+                <label>
+                    Album
                     <input v-model="scrapedData.album" @input="updatePreview">
-                </div>
+                </label>
 
-                <div class="form-group">
-                    <label>Post Text</label>
+                <label>
+                    Post Text
                     <textarea v-model="postText" rows="4"></textarea>
-                </div>
+                </label>
 
-                <div class="preview-section">
-                    <img v-if="scrapedData.image" :src="scrapedData.image" class="preview-image" :alt="altText">
-                    <p class="preview-text">{{ postText }}</p>
-                </div>
+                <label>
+                    Image Alt Text
+                    <input v-model="altText">
+                </label>
 
-                <div class="button-group">
-                    <button @click="reset" class="btn btn-secondary">Back</button>
-                    <button @click="post" class="btn btn-success" :disabled="loading">
-                        <span v-if="loading" class="loading" style="margin-right: 8px;"></span>
-                        {{ loading ? 'Posting...' : 'Post to Mastodon' }}
-                    </button>
-                </div>
-                <div v-if="error" class="message error">{{ error }}</div>
-                <div v-if="success" class="message success" v-html="success"></div>
-            </div>
+                <figure>
+                    <img v-if="scrapedData.image" :src="scrapedData.image" :alt="altText">
+                    <figcaption class="preview-text">
+                        {{ postText }}
+                    </figcaption>
+                </figure>
+
+                <footer>
+                    <button @click="post" :aria-busy="loading" :disabled="loading">Post to Mastodon</button>
+                    <button @click="reset" class="secondary outline">Back</button>
+                </footer>
+                
+                <p v-if="error" class="message-error">{{ error }}</p>
+                <p v-if="success" class="message-success" v-html="success"></p>
+            </article>
         </div>
     `,
     props: ['authenticated', 'registered'],

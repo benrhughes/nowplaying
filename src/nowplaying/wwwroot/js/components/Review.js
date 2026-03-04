@@ -1,94 +1,91 @@
 export default {
     template: `
-        <div class="card">
-            <h2>Review History</h2>
-            <div class="form-group">
-                <label>Date Range</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="date" v-model="since">
-                    <input type="date" v-model="until">
+        <div>
+            <article>
+                <header><strong>Review History</strong></header>
+                <div class="grid">
+                    <label>
+                        Start Date
+                        <input type="date" v-model="since">
+                    </label>
+                    <label>
+                        End Date
+                        <input type="date" v-model="until">
+                    </label>
                 </div>
-            </div>
-            <button @click="search" class="btn btn-primary" :disabled="loading || generating">
-                <span v-if="loading && !generating" class="loading" style="margin-right: 8px;"></span>
-                {{ loading && !generating ? 'Searching...' : 'Search #nowplaying' }}
-            </button>
+                <button @click="search" :aria-busy="loading" :disabled="loading || generating">
+                    {{ loading ? 'Searching...' : 'Search #nowplaying' }}
+                </button>
+                <p v-if="error" class="message-error">{{ error }}</p>
+            </article>
 
-            <div v-if="error" class="message error">{{ error }}</div>
-
-            <div v-if="posts.length > 0 && generating" style="margin-top: 20px; padding: 20px; background: #f0f4ff; border-radius: 8px; border: 1px solid #d0daff;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div class="loading spinner-large"></div>
-                    <div>
-                        <h3 style="margin: 0;">Generating composite image...</h3>
-                        <p style="margin: 5px 0 0 0; color: #666;">Processing {{ posts.length }} albums. This may take a few moments.</p>
-                    </div>
-                </div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar progress-bar-animated"></div>
-                </div>
-            </div>
+            <article v-if="posts.length > 0 && generating" aria-busy="true">
+                Generating composite image...
+                <footer>Processing {{ posts.length }} albums. This may take a few moments.</footer>
+            </article>
             
-            <div v-if="posts.length > 0 && !generating && !compositeUrl" style="margin-top: 20px;">
-                <h3>Found {{ posts.length }} albums.</h3>
-            </div>
-            <div v-else-if="searched && posts.length === 0" style="margin-top: 20px;">
-                <p>No posts found in this range.</p>
-            </div>
+            <article v-if="posts.length > 0 && !generating && !compositeUrl">
+                <header>Found {{ posts.length }} albums.</header>
+            </article>
 
-            <div v-if="compositeUrl" style="margin-top: 20px;">
-                <h3>Composite Image</h3>
-                <div style="text-align: center;">
-                    <img :src="compositeUrl" style="max-width: 100%; border: 1px solid #ccc;">
-                    <br>
-                    <a :href="compositeUrl" download="nowplaying_composite.jpg" class="btn btn-primary" style="margin-top: 10px;">Download</a>
-                    <button @click="toggleShareForm" class="btn btn-success" style="margin-left: 10px; margin-top: 10px;">Share to Mastodon</button>
+            <article v-else-if="searched && posts.length === 0">
+                <p>No posts found in this range.</p>
+            </article>
+
+            <article v-if="compositeUrl">
+                <header><strong>Composite Image</strong></header>
+                <figure class="text-center">
+                    <img :src="compositeUrl" class="composite-image">
+                </figure>
+
+                <div class="share-actions">
+                    <button @click="toggleShareForm" class="w-100">Share to Mastodon</button>
+                    <a :href="compositeUrl" download="nowplaying_composite.jpg" role="button" class="secondary outline w-100">Download Image</a>
                 </div>
-                
-                <div v-if="posts.length > 0" style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
-                    <h4 style="margin-top: 0;">Albums ({{ posts.length }})</h4>
-                    <ol style="margin: 0; padding-left: 20px;">
-                        <li v-for="(post, index) in posts" :key="post.postId" style="margin-bottom: 8px;">
+
+                <details v-if="posts.length > 0">
+                    <summary>View Albums ({{ posts.length }})</summary>
+                    <ol>
+                        <li v-for="(post, index) in posts" :key="post.postId">
                             {{ post.altText }}
                         </li>
                     </ol>
-                </div>
+                </details>
 
                 <!-- Share Form -->
-                <div v-if="showShareForm" data-share-form style="margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 4px; border-left: 4px solid #4CAF50;">
-                    <h3>Share to Mastodon</h3>
+                <article v-if="showShareForm" data-share-form>
+                    <header><strong>Share to Mastodon</strong></header>
                     
-                    <div class="form-group">
-                        <label>Image Alt Text <span :style="{color: altTextCharCount > 1500 ? '#d32f2f' : altTextCharCount > 1350 ? '#f57c00' : '#666'}">{{ altTextCharCount }}/1500</span></label>
-                        <textarea v-model="shareAltText" rows="6" style="width: 100%; font-family: monospace; white-space: pre-wrap;" maxlength="1500"></textarea>
-                        <div v-if="altTextCharCount > 1500" class="message error" style="margin-top: 8px; padding: 8px; margin-bottom: 0;">Alt text exceeds 1500 character limit by {{ altTextCharCount - 1500 }} characters</div>
-                        <div v-else-if="altTextCharCount > 1350" class="message info" style="margin-top: 8px; padding: 8px; margin-bottom: 0;">{{ 1500 - altTextCharCount }} characters remaining</div>
-                    </div>
+                    <label>
+                        Image Alt Text <span :class="['char-count', { 'over-limit': altTextCharCount > 1500 }]">{{ altTextCharCount }}/1500</span>
+                        <textarea v-model="shareAltText" rows="6" maxlength="1500"></textarea>
+                    </label>
+                    <small v-if="altTextCharCount > 1500" class="message-error">Alt text exceeds 1500 character limit</small>
 
-                    <div class="form-group">
-                        <label>Post Text</label>
-                        <textarea v-model="sharePostText" rows="5" style="width: 100%;"></textarea>
-                    </div>
+                    <label>
+                        Post Text
+                        <textarea v-model="sharePostText" rows="5"></textarea>
+                    </label>
 
-                    <div style="padding: 15px; background: white; border-radius: 4px; margin-top: 15px;">
-                        <p style="margin: 0 0 10px 0; font-weight: bold;">Preview:</p>
-                        <img :src="compositeUrl" style="max-width: 100%; border: 1px solid #ddd; margin-bottom: 10px;">
-                        <p style="margin: 0 0 10px 0; color: #666; font-size: 0.9em; white-space: pre-wrap;">{{ shareAltText }}</p>
-                        <p style="margin: 0; color: #333;">{{ sharePostText }}</p>
-                    </div>
+                    <figure>
+                        <img :src="compositeUrl">
+                        <figcaption>
+                            <small class="preview-text">{{ shareAltText }}</small>
+                            <p class="preview-text">{{ sharePostText }}</p>
+                        </figcaption>
+                    </figure>
 
-                    <div style="margin-top: 15px;">
-                        <button @click="toggleShareForm" class="btn btn-secondary">Cancel</button>
-                        <button @click="postComposite" class="btn btn-success" :disabled="shareLoading || altTextCharCount > 1500" style="margin-left: 10px;" :title="altTextCharCount > 1500 ? 'Alt text exceeds 1500 character limit' : ''">
-                            <span v-if="shareLoading" class="loading" style="margin-right: 8px;"></span>
+                    <footer>
+                        <button @click="postComposite" :aria-busy="shareLoading" :disabled="shareLoading || altTextCharCount > 1500">
                             {{ shareLoading ? 'Posting...' : 'Post to Mastodon' }}
                         </button>
-                    </div>
+                        <button @click="toggleShareForm" class="secondary outline">Cancel</button>
+                    </footer>
 
-                    <div v-if="shareError" class="message error" style="margin-top: 10px;">{{ shareError }}</div>
-                    <div v-if="shareSuccess" class="message success" style="margin-top: 10px;" v-html="shareSuccess"></div>
-                </div>
-            </div>
+                    <p v-if="shareError" class="message-error">{{ shareError }}</p>
+                    <p v-if="shareSuccess" class="message-success" v-html="shareSuccess"></p>
+                </article>
+            </article>
         </div>
     `,
     data() {

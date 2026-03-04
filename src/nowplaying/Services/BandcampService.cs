@@ -50,14 +50,18 @@ public class BandcampService(HttpClient httpClient)
         var match = Regex.Match(title, @"(.+?)\s*–\s*(.+?)(?:\s+by|on Bandcamp)?$", RegexOptions.IgnoreCase);
         if (match.Success)
         {
-            return (match.Groups[2].Value.Trim(), match.Groups[1].Value.Trim());
+            var album = match.Groups[1].Value.Trim().TrimEnd(',').Trim();
+            var artist = match.Groups[2].Value.Trim();
+            return (artist, album);
         }
 
         // Pattern: "Album by Artist"
         var byMatch = Regex.Match(title, @"(.+?)\s+by\s+(.+?)(?:\s+on Bandcamp)?$", RegexOptions.IgnoreCase);
         if (byMatch.Success)
         {
-            return (byMatch.Groups[2].Value.Trim(), byMatch.Groups[1].Value.Trim());
+            var album = byMatch.Groups[1].Value.Trim().TrimEnd(',').Trim();
+            var artist = byMatch.Groups[2].Value.Trim();
+            return (artist, album);
         }
 
         return (string.Empty, string.Empty);

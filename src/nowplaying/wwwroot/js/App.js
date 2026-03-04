@@ -5,44 +5,44 @@ import InstanceSelection from './components/InstanceSelection.js';
 export default {
     components: { Post, Review, InstanceSelection },
     template: `
-        <div class="container">
-            <header>
-                <div style="display: flex; align-items: center; gap: 15px;">
+        <main class="container">
+            <header class="app-header">
+                <div class="header-top">
                     <h1>NowPlaying</h1>
-                    <nav v-if="authenticated">
-                        <button @click="view = 'post'" :class="['btn', view === 'post' ? 'btn-primary' : 'btn-secondary']">Post</button>
-                        <button @click="view = 'review'" :class="['btn', view === 'review' ? 'btn-primary' : 'btn-secondary']">Review</button>
-                    </nav>
+                    <div id="auth-status">
+                        <span v-if="authenticated && instance">
+                            Logged in to <a :href="instance" target="_blank" class="instance-link">{{ instanceName }}</a>
+                        </span>
+                        <a v-if="authenticated" href="/auth/logout" role="button" class="secondary outline">Logout</a>
+                    </div>
                 </div>
-                <div id="auth-status">
-                    <span v-if="authenticated && instance">
-                        Logged in to <a :href="instance" target="_blank" class="instance-link">{{ instanceName }}</a>
-                    </span>
-                    <a v-if="authenticated" href="/auth/logout" class="btn btn-secondary" style="margin-left: 10px;">Logout</a>
+                <div v-if="authenticated" class="tabs-wrapper">
+                    <div class="tabs">
+                        <a href="#" @click.prevent="view = 'post'" class="tab-link" :class="{ active: view === 'post' }">Post from Bandcamp</a>
+                        <a href="#" @click.prevent="view = 'review'" class="tab-link" :class="{ active: view === 'review' }">Review & Composite</a>
+                    </div>
                 </div>
             </header>
 
-            <main>
-                <div v-if="!authenticated" style="margin-top: 20px;">
-                    <InstanceSelection 
-                        v-if="!registered"
-                        @registered="handleInstanceRegistered"
-                    />
-                    <div v-else class="card">
-                        <h2>Ready to Login</h2>
-                        <p>Instance registered: <strong>{{ instanceName }}</strong></p>
-                        <a href="/auth/login" class="btn btn-primary">Login with Mastodon</a>
-                    </div>
-                </div>
-                <keep-alive v-else>
-                    <component :is="viewComponent" 
-                        :authenticated="authenticated" 
-                        :registered="registered"
-                        @unauthorized="checkAuth"
-                    />
-                </keep-alive>
-            </main>
-        </div>
+            <div v-if="!authenticated">
+                <InstanceSelection 
+                    v-if="!registered"
+                    @registered="handleInstanceRegistered"
+                />
+                <article v-else>
+                    <header><strong>Ready to Login</strong></header>
+                    <p>Instance registered: <strong>{{ instanceName }}</strong></p>
+                    <a href="/auth/login" role="button" class="w-100">Login with Mastodon</a>
+                </article>
+            </div>
+            <keep-alive v-else>
+                <component :is="viewComponent" 
+                    :authenticated="authenticated" 
+                    :registered="registered"
+                    @unauthorized="checkAuth"
+                />
+            </keep-alive>
+        </main>
     `,
     data() {
         return {

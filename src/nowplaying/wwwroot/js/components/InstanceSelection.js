@@ -3,12 +3,12 @@
  */
 export default {
     template: `
-        <div class="card">
-            <h2>Select Your Mastodon Instance</h2>
+        <article>
+            <header><strong>Select Your Mastodon Instance</strong></header>
             <p>Enter your Mastodon instance URL to continue:</p>
             <form @submit.prevent="registerInstance">
-                <div class="form-group">
-                    <label for="instance">Instance URL:</label>
+                <label for="instance">
+                    Instance URL
                     <input 
                         id="instance"
                         v-model="instanceUrl" 
@@ -17,17 +17,13 @@ export default {
                         required
                         @keydown.enter="registerInstance"
                     >
-                </div>
-                <div v-if="error" class="message error">{{ error }}</div>
-                <button 
-                    type="submit" 
-                    class="btn btn-primary" 
-                    :disabled="loading"
-                >
+                </label>
+                <button type="submit" :aria-busy="loading">
                     {{ loading ? 'Registering...' : 'Continue' }}
                 </button>
             </form>
-        </div>
+            <p v-if="error" class="message-error">{{ error }}</p>
+        </article>
     `,
     emits: ['registered'],
     data() {
