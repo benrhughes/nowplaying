@@ -24,7 +24,7 @@ public class AppConfig
     [Required]
     [Range(1, 65535)]
     [ConfigurationKeyName("PORT")]
-    public int Port { get; set; } = 4444;
+    public int Port { get; set; }
 
     /// <summary>
     /// Gets or sets the redirect URI for OAuth.
@@ -32,7 +32,7 @@ public class AppConfig
     [Required]
     [Url]
     [ConfigurationKeyName("REDIRECT_URI")]
-    public string RedirectUri { get; set; } = "http://localhost:4444/auth/callback";
+    public string RedirectUri { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the session secret key.
@@ -40,5 +40,12 @@ public class AppConfig
     [Required]
     [MinLength(16)]
     [ConfigurationKeyName("SESSION_SECRET")]
-    public string SessionSecret { get; set; } = "dev-secret-change-in-production";
+    public string SessionSecret { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the HTTP client timeout in seconds.
+    /// </summary>
+    [Range(1, 300)]
+    [ConfigurationKeyName("HTTP_TIMEOUT_SECONDS")]
+    public int HttpTimeoutSeconds { get; set; } = 15;
 }

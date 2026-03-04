@@ -49,9 +49,13 @@ public static class ReviewEndpoints
 
             return Results.Ok(images);
         }
+        catch (HttpRequestException ex)
+        {
+            return Results.BadRequest(new ErrorResponse($"Failed to fetch posts: {ex.Message}"));
+        }
         catch (Exception ex)
         {
-            return Results.BadRequest(new ErrorResponse(ex.Message));
+            return Results.BadRequest(new ErrorResponse($"An error occurred: {ex.Message}"));
         }
     }
 
@@ -75,9 +79,13 @@ public static class ReviewEndpoints
             var imageBytes = await imageService.GenerateCompositeAsync(request.ImageUrls);
             return Results.File(imageBytes, "image/jpeg");
         }
+        catch (HttpRequestException ex)
+        {
+            return Results.BadRequest(new ErrorResponse($"Failed to download images: {ex.Message}"));
+        }
         catch (Exception ex)
         {
-            return Results.BadRequest(new ErrorResponse(ex.Message));
+            return Results.BadRequest(new ErrorResponse($"Failed to generate composite: {ex.Message}"));
         }
     }
 
@@ -134,9 +142,13 @@ public static class ReviewEndpoints
                 }
             }
         }
+        catch (HttpRequestException ex)
+        {
+            return Results.BadRequest(new ErrorResponse($"Failed to post composite: {ex.Message}"));
+        }
         catch (Exception ex)
         {
-            return Results.BadRequest(new ErrorResponse(ex.Message));
+            return Results.BadRequest(new ErrorResponse($"An error occurred: {ex.Message}"));
         }
     }
 }

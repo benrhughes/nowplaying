@@ -3,6 +3,7 @@ using Moq;
 using Xunit;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using Microsoft.Extensions.Logging;
 
 namespace NowPlaying.Tests.Services;
 
@@ -15,7 +16,8 @@ public class ImageServiceTests
         var content = new byte[] { 1, 2, 3 };
         var handler = new MockHttpMessageHandler(content);
         var client = new HttpClient(handler);
-        var service = new ImageService(client);
+        var loggerMock = new Mock<ILogger<ImageService>>();
+        var service = new ImageService(client, loggerMock.Object);
 
         // Act
         var result = await service.DownloadImageAsync("https://example.com/image.jpg");
@@ -29,7 +31,8 @@ public class ImageServiceTests
     {
         var handler = new MockHttpMessageHandler(Array.Empty<byte>());
         var client = new HttpClient(handler);
-        var service = new ImageService(client);
+        var loggerMock = new Mock<ILogger<ImageService>>();
+        var service = new ImageService(client, loggerMock.Object);
 
         var result = await service.GenerateCompositeAsync(new List<string>());
 
@@ -49,7 +52,8 @@ public class ImageServiceTests
 
         var handler = new MockHttpMessageHandler(imageBytes);
         var client = new HttpClient(handler);
-        var service = new ImageService(client);
+        var loggerMock = new Mock<ILogger<ImageService>>();
+        var service = new ImageService(client, loggerMock.Object);
 
         var urls = new List<string> { "http://example.com/1.jpg" };
 

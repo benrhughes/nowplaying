@@ -79,6 +79,12 @@ public static class AuthEndpoints
 
             return Results.Redirect("/");
         }
+        catch (HttpRequestException ex)
+        {
+            var logger = loggerFactory.CreateLogger(nameof(AuthEndpoints));
+            logger.LogWarning(ex, "OAuth callback failed: {message}", ex.Message);
+            return Results.BadRequest(new ErrorResponse($"OAuth failed: {ex.Message}"));
+        }
         catch (Exception ex)
         {
             var logger = loggerFactory.CreateLogger(nameof(AuthEndpoints));

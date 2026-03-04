@@ -17,9 +17,6 @@ dotnet_diagnostic.SA1101.severity = none # Use 'this.' prefix
 dotnet_diagnostic.SA1413.severity = none # Trailing comma
 dotnet_diagnostic.SA1206.severity = none # Modifier order (StyleCop doesn't handle 'required' well)
 dotnet_diagnostic.SA1313.severity = none # Parameter casing for records
-#dotnet_diagnostic.SA1516.severity = none # Blank lines between members
-#dotnet_diagnostic.SA0001.severity = none # XML comment analysis disabled
 
-[src/bcmasto/Program.cs]
+[src/nowplaying/Program.cs]
 dotnet_diagnostic.SA1516.severity = none
-dotnet_diagnostic.NU1603.severity = none # NuGet dependency resolved instead

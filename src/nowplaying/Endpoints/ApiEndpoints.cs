@@ -46,6 +46,12 @@ public static class ApiEndpoints
 
             return Results.Ok(new RegistrationResponse(true, instance));
         }
+        catch (HttpRequestException ex)
+        {
+            var logger = loggerFactory.CreateLogger(nameof(ApiEndpoints));
+            logger.LogWarning(ex, "App registration failed for {instance}: {message}", instance, ex.Message);
+            return Results.BadRequest(new ErrorResponse($"Failed to register with instance: {ex.Message}"));
+        }
         catch (Exception ex)
         {
             var logger = loggerFactory.CreateLogger(nameof(ApiEndpoints));
@@ -96,6 +102,12 @@ public static class ApiEndpoints
             var result = await bandcampService.ScrapeAsync(request.Url);
             return Results.Ok(result);
         }
+        catch (HttpRequestException ex)
+        {
+            var logger = loggerFactory.CreateLogger(nameof(ApiEndpoints));
+            logger.LogWarning(ex, "Scrape failed for {url}: {message}", request.Url, ex.Message);
+            return Results.BadRequest(new ErrorResponse($"Failed to scrape URL: {ex.Message}"));
+        }
         catch (Exception ex)
         {
             var logger = loggerFactory.CreateLogger(nameof(ApiEndpoints));
@@ -136,6 +148,12 @@ public static class ApiEndpoints
             var (statusId, url) = await mastodonService.PostStatusAsync(instance, accessToken, request.Text, mediaId);
 
             return Results.Ok(new PostResponse(true, statusId, url));
+        }
+        catch (HttpRequestException ex)
+        {
+            var logger = loggerFactory.CreateLogger(nameof(ApiEndpoints));
+            logger.LogWarning(ex, "Post failed due to network error: {message}", ex.Message);
+            return Results.BadRequest(new ErrorResponse($"Failed to post: {ex.Message}"));
         }
         catch (Exception ex)
         {

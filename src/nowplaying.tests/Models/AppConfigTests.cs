@@ -66,16 +66,17 @@ public class AppConfigTests
     }
 
     /// <summary>
-    /// Verifies that AppConfig uses default values when no config is provided.
+    /// Verifies that AppConfig requires all values to be configured.
     /// </summary>
     [Fact]
-    public void AppConfig_ShouldHaveDefaultValues()
+    public void AppConfig_ShouldFailValidation_WhenCreatedWithoutConfiguration()
     {
         // Act
         var config = new AppConfig();
 
-        // Assert
-        Assert.Equal(4444, config.Port);
-        Assert.Equal("http://localhost:4444/auth/callback", config.RedirectUri);
+        // Assert - no defaults, so validation should fail
+        var context = new ValidationContext(config);
+        var results = new List<ValidationResult>();
+        Assert.False(Validator.TryValidateObject(config, context, results, true));
     }
 }

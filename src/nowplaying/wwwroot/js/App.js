@@ -19,7 +19,7 @@ export default {
                 <div v-if="authenticated" class="tabs-wrapper">
                     <div class="tabs">
                         <a href="#" @click.prevent="view = 'post'" class="tab-link" :class="{ active: view === 'post' }">Post from Bandcamp</a>
-                        <a href="#" @click.prevent="view = 'review'" class="tab-link" :class="{ active: view === 'review' }">Review & Composite</a>
+                        <a href="#" @click.prevent="view = 'review'" class="tab-link" :class="{ active: view === 'review' }">#NowPlaying History</a>
                     </div>
                 </div>
             </header>

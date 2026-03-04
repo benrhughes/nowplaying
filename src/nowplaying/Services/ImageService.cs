@@ -9,7 +9,8 @@ using SixLabors.ImageSharp.Drawing.Processing;
 /// Implementation of <see cref="IImageService"/> using a typed <see cref="HttpClient"/>.
 /// </summary>
 /// <param name="httpClient">The HTTP client.</param>
-public class ImageService(HttpClient httpClient)
+/// <param name="logger">The logger.</param>
+public class ImageService(HttpClient httpClient, ILogger<ImageService> logger)
     : IImageService
 {
     /// <inheritdoc/>
@@ -38,9 +39,9 @@ public class ImageService(HttpClient httpClient)
                     var img = Image.Load(data);
                     images.Add(img);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Skip failed downloads or invalid images
+                    logger.LogWarning(ex, "Failed to download or load image from {url}", url);
                 }
             }
 

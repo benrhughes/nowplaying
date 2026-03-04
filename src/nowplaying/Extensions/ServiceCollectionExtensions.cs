@@ -15,8 +15,9 @@ public static class ServiceCollectionExtensions
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="config">The app configuration.</param>
+    /// <param name="environment">The web host environment.</param>
     /// <returns>The modified service collection.</returns>
-    public static IServiceCollection AddServices(this IServiceCollection services, AppConfig config)
+    public static IServiceCollection AddServices(this IServiceCollection services, AppConfig config, IWebHostEnvironment environment)
     {
         services.AddDistributedMemoryCache();
 
@@ -25,13 +26,13 @@ public static class ServiceCollectionExtensions
             options.IdleTimeout = TimeSpan.FromHours(24);
             options.Cookie.HttpOnly = true;
             options.Cookie.IsEssential = true;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+            options.Cookie.SecurePolicy = environment.IsProduction() ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
         });
 
         // Common configuration for all typed clients
         Action<HttpClient> configureClient = client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(15);
+            client.Timeout = TimeSpan.FromSeconds(config.HttpTimeoutSeconds);
             client.DefaultRequestHeaders.UserAgent.ParseAdd("NowPlaying/1.0");
         };
 

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http.Features;
 using NowPlaying.Extensions;
 using NowPlaying.Models;
 
@@ -17,28 +18,31 @@ if (!Validator.TryValidateObject(config, new ValidationContext(config), validati
 
 // Services
 builder.Services.AddSingleton(config);
-builder.Services.AddServices(config);
-builder.Services.AddCors(options =>
+builder.Services.AddServices(config, builder.Environment);
+
+builder.Services.Configure<FormOptions>(options =>
 {
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
+    options.MultipartBodyLengthLimit = 52428800; // 50MB
 });
 
 builder.Services.AddLogging();
 
 var app = builder.Build();
 
+// Add Content Security Policy headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;");
+    await next();
+});
+
 app.UseSession();
-app.UseCors();
 app.UseStaticFiles();
 
 app.MapEndpoints();
 
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
 logger.LogInformation("Server running on port {port}", config.Port);
 logger.LogInformation("Redirect URI: {redirectUri}", config.RedirectUri);
 
