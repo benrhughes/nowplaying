@@ -14,8 +14,9 @@ public static class AuthenticationEndpoints
     /// <param name="context">The HTTP context.</param>
     /// <param name="instance">The optional instance URL.</param>
     /// <param name="clientId">The optional client ID.</param>
+    /// <param name="config">The app configuration.</param>
     /// <returns>A redirect to the OAuth authorize URL.</returns>
-    public static IResult Login(HttpContext context, string? instance, string? clientId)
+    public static IResult Login(HttpContext context, string? instance, string? clientId, AppConfig config)
     {
         instance ??= context.Session.GetString("instance");
         clientId ??= context.Session.GetString("clientId");
@@ -28,15 +29,9 @@ public static class AuthenticationEndpoints
         // Ensure no trailing slashes in instance URL
         instance = instance.TrimEnd('/');
 
-        var redirectUri = context.Session.GetString("redirectUri");
-        if (string.IsNullOrEmpty(redirectUri))
-        {
-            return Results.BadRequest(new ErrorResponse("Redirect URI not found in session. Please register your instance first."));
-        }
-
         var authUrl = $"{instance}/oauth/authorize?" +
                       $"client_id={Uri.EscapeDataString(clientId)}" +
-                      $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
+                      $"&redirect_uri={Uri.EscapeDataString(config.RedirectUri)}" +
                       $"&response_type=code" +
                       $"&scope={Uri.EscapeDataString(AppConfig.OAuthScopes)}";
 
@@ -49,12 +44,14 @@ public static class AuthenticationEndpoints
     /// <param name="context">The HTTP context.</param>
     /// <param name="code">The authorization code.</param>
     /// <param name="mastodonService">The Mastodon service.</param>
+    /// <param name="config">The app configuration.</param>
     /// <param name="loggerFactory">The logger factory.</param>
     /// <returns>A redirect to the homepage.</returns>
     public static async Task<IResult> Callback(
         HttpContext context,
         string? code,
         IMastodonService mastodonService,
+        AppConfig config,
         ILoggerFactory loggerFactory)
     {
         if (string.IsNullOrEmpty(code))
@@ -73,8 +70,7 @@ public static class AuthenticationEndpoints
 
         try
         {
-            var redirectUri = context.Session.GetString("redirectUri") ?? "http://localhost:4444/auth/callback";
-            var accessToken = await mastodonService.GetAccessTokenAsync(instance, clientId, clientSecret, code, redirectUri);
+            var accessToken = await mastodonService.GetAccessTokenAsync(instance, clientId, clientSecret, code, config.RedirectUri);
             context.Session.SetString("accessToken", accessToken?.Trim() ?? string.Empty);
 
             return Results.Redirect("/");
