@@ -96,7 +96,7 @@ export default {
             this.loading = true;
             this.error = null;
             try {
-                const res = await fetch('/api/register', {
+                const res = await fetch('/api/config/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ instance: this.instanceUrl })
@@ -114,7 +114,7 @@ export default {
             this.loading = true;
             this.error = null;
             try {
-                const res = await fetch('/api/scrape', {
+                const res = await fetch('/api/posting/scrape', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: this.url })
@@ -141,7 +141,7 @@ export default {
             this.error = null;
             this.success = null;
             try {
-                const res = await fetch('/api/post', {
+                const res = await fetch('/api/posting/post', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

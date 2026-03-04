@@ -9,7 +9,7 @@ using Xunit;
 
 namespace NowPlaying.Tests.Endpoints;
 
-public class ApiEndpointsTests
+public class PostingEndpointsTests
 {
     private readonly Mock<IBandcampService> _bandcampServiceMock;
     private readonly Mock<IMastodonService> _mastodonServiceMock;
@@ -19,7 +19,7 @@ public class ApiEndpointsTests
     private readonly Mock<ILoggerFactory> _loggerFactoryMock;
     private readonly AppConfig _config;
 
-    public ApiEndpointsTests()
+    public PostingEndpointsTests()
     {
         _bandcampServiceMock = new Mock<IBandcampService>();
         _mastodonServiceMock = new Mock<IMastodonService>();
@@ -40,56 +40,6 @@ public class ApiEndpointsTests
     }
 
     [Fact]
-    public async Task Register_WithValidInstance_ReturnsResult()
-    {
-        // Arrange
-        var request = new RegisterRequest { Instance = "https://mastodon.social" };
-        _mastodonServiceMock.Setup(m => m.RegisterAppAsync("mastodon.social", _config.RedirectUri))
-            .ReturnsAsync(("client-id", "client-secret"));
-
-        // Act
-        var result = await ApiEndpoints.Register(_httpContextMock.Object, request, _mastodonServiceMock.Object, _config, _loggerFactoryMock.Object);
-
-        // Assert
-        Assert.NotNull(result);
-    }
-
-    [Fact]
-    public void RegisterRequest_WithNullInstance_FailsValidation()
-    {
-        // Arrange
-        var request = new RegisterRequest { Instance = null! };
-        var validationResults = new List<ValidationResult>();
-
-        // Act
-        var isValid = Validator.TryValidateObject(request, new ValidationContext(request), validationResults, validateAllProperties: true);
-
-        // Assert
-        Assert.False(isValid);
-        Assert.Contains(validationResults, r => r.MemberNames.Contains(nameof(RegisterRequest.Instance)));
-    }
-
-    [Fact]
-    public void Status_WithAuthenticatedSession_ReturnsResult()
-    {
-        // Act
-        var result = ApiEndpoints.Status(_httpContextMock.Object);
-
-        // Assert
-        Assert.NotNull(result);
-    }
-
-    [Fact]
-    public void Status_WithUnauthenticatedSession_ReturnsResult()
-    {
-        // Act
-        var result = ApiEndpoints.Status(_httpContextMock.Object);
-
-        // Assert
-        Assert.NotNull(result);
-    }
-
-    [Fact]
     public async Task Scrape_WithValidBandcampUrl_ReturnsResult()
     {
         // Arrange
@@ -106,7 +56,7 @@ public class ApiEndpointsTests
             .ReturnsAsync(scrapeResponse);
 
         // Act
-        var result = await ApiEndpoints.Scrape(_httpContextMock.Object, request, _bandcampServiceMock.Object, _loggerFactoryMock.Object);
+        var result = await PostingEndpoints.Scrape(_httpContextMock.Object, request, _bandcampServiceMock.Object, _loggerFactoryMock.Object);
 
         // Assert
         Assert.NotNull(result);
@@ -149,7 +99,7 @@ public class ApiEndpointsTests
         var request = new ScrapeRequest { Url = "https://spotify.com/album/test" };
 
         // Act
-        var result = await ApiEndpoints.Scrape(_httpContextMock.Object, request, _bandcampServiceMock.Object, _loggerFactoryMock.Object);
+        var result = await PostingEndpoints.Scrape(_httpContextMock.Object, request, _bandcampServiceMock.Object, _loggerFactoryMock.Object);
 
         // Assert
         Assert.NotNull(result);
@@ -176,7 +126,7 @@ public class ApiEndpointsTests
             .ReturnsAsync(("status-id", "https://mastodon.social/@user/123"));
  
         // Act
-        var result = await ApiEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _imageServiceMock.Object, _loggerFactoryMock.Object);
+        var result = await PostingEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _imageServiceMock.Object, _loggerFactoryMock.Object);
  
         // Assert
         Assert.NotNull(result);
@@ -189,7 +139,7 @@ public class ApiEndpointsTests
         var request = new PostRequest { Text = "Check this out!", ImageUrl = "https://example.com/image.jpg" };
  
         // Act
-        var result = await ApiEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _imageServiceMock.Object, _loggerFactoryMock.Object);
+        var result = await PostingEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _imageServiceMock.Object, _loggerFactoryMock.Object);
  
         // Assert
         Assert.NotNull(result);

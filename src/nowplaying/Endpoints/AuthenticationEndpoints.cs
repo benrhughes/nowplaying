@@ -6,7 +6,7 @@ using NowPlaying.Services;
 /// <summary>
 /// Authentication endpoints for OAuth.
 /// </summary>
-public static class AuthEndpoints
+public static class AuthenticationEndpoints
 {
     /// <summary>
     /// Initiates the OAuth login process.
@@ -81,13 +81,13 @@ public static class AuthEndpoints
         }
         catch (HttpRequestException ex)
         {
-            var logger = loggerFactory.CreateLogger(nameof(AuthEndpoints));
+            var logger = loggerFactory.CreateLogger(nameof(AuthenticationEndpoints));
             logger.LogWarning(ex, "OAuth callback failed: {message}", ex.Message);
             return Results.BadRequest(new ErrorResponse($"OAuth failed: {ex.Message}"));
         }
         catch (Exception ex)
         {
-            var logger = loggerFactory.CreateLogger(nameof(AuthEndpoints));
+            var logger = loggerFactory.CreateLogger(nameof(AuthenticationEndpoints));
             logger.LogError(ex, "OAuth callback failed");
             return Results.StatusCode(StatusCodes.Status500InternalServerError);
         }

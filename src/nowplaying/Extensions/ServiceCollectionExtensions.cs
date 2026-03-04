@@ -52,25 +52,38 @@ public static class ServiceCollectionExtensions
     /// <returns>The modified web application.</returns>
     public static WebApplication MapEndpoints(this WebApplication app)
     {
+        // Auth routes (not under /api since they handle OAuth redirects)
         var authGroup = app.MapGroup("/auth")
             .WithTags("Authentication");
 
-        authGroup.MapGet("/login", AuthEndpoints.Login);
-        authGroup.MapGet("/callback", AuthEndpoints.Callback);
-        authGroup.MapGet("/logout", AuthEndpoints.Logout);
+        authGroup.MapGet("/login", AuthenticationEndpoints.Login);
+        authGroup.MapGet("/callback", AuthenticationEndpoints.Callback);
+        authGroup.MapGet("/logout", AuthenticationEndpoints.Logout);
 
         var apiGroup = app.MapGroup("/api")
-            .WithTags("API")
+            .WithTags("API");
+
+        var configGroup = apiGroup.MapGroup("/config")
+            .WithTags("Configuration")
             .AddEndpointFilter<ValidationFilter>();
 
-        apiGroup.MapPost("/register", ApiEndpoints.Register);
-        apiGroup.MapGet("/status", ApiEndpoints.Status);
-        apiGroup.MapPost("/scrape", ApiEndpoints.Scrape);
-        apiGroup.MapPost("/post", ApiEndpoints.Post);
+        configGroup.MapPost("/register", ConfigurationEndpoints.Register);
+        configGroup.MapGet("/status", ConfigurationEndpoints.Status);
 
-        apiGroup.MapGet("/review/search", ReviewEndpoints.Search);
-        apiGroup.MapPost("/review/composite", ReviewEndpoints.Composite);
-        apiGroup.MapPost("/review/post-composite", ReviewEndpoints.PostComposite);
+        var postingGroup = apiGroup.MapGroup("/posting")
+            .WithTags("Posting")
+            .AddEndpointFilter<ValidationFilter>();
+
+        postingGroup.MapPost("/scrape", PostingEndpoints.Scrape);
+        postingGroup.MapPost("/post", PostingEndpoints.Post);
+
+        var historyGroup = apiGroup.MapGroup("/history")
+            .WithTags("History")
+            .AddEndpointFilter<ValidationFilter>();
+
+        historyGroup.MapGet("/search", HistoryEndpoints.Search);
+        historyGroup.MapPost("/composite", HistoryEndpoints.Composite);
+        historyGroup.MapPost("/post-composite", HistoryEndpoints.PostComposite);
 
         // Serve index.html for root
         app.MapGet("/", context =>

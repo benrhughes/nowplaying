@@ -67,7 +67,7 @@ export default {
     methods: {
         async checkAuth() {
             try {
-                const res = await fetch('/api/status');
+                const res = await fetch('/api/config/status');
                 const data = await res.json();
                 this.authenticated = data.authenticated;
                 this.registered = data.registered;

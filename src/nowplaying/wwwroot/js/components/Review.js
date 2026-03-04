@@ -13,8 +13,8 @@ export default {
                         <input type="date" v-model="until">
                     </label>
                 </div>
-                <button @click="search" :aria-busy="loading" :disabled="loading || generating">
-                    {{ loading ? 'Searching...' : 'Search #nowplaying' }}
+                <button @click="search" :aria-busy="searching" :disabled="searching || generating">
+                    {{ searching ? 'Searching...' : 'Search #nowplaying' }}
                 </button>
                 <p v-if="error" class="message-error">{{ error }}</p>
             </article>
@@ -97,7 +97,7 @@ export default {
         return {
             since: start.toISOString().split('T')[0],
             until: end.toISOString().split('T')[0],
-            loading: false,
+            searchLoading: false,
             generating: false,
             error: null,
             posts: [],
@@ -119,14 +119,14 @@ export default {
     },
     methods: {
         async search() {
-            this.loading = true;
+            this.searching = true;
             this.error = null;
             this.posts = [];
             this.compositeUrl = null;
             this.searched = false;
             
             try {
-                const res = await fetch(`/api/review/search?since=${this.since}&until=${this.until}`);
+                const res = await fetch(`/api/history/search?since=${this.since}&until=${this.until}`);
                 if (!res.ok) {
                     if (res.status === 401) {
                         this.$emit('unauthorized');
@@ -136,6 +136,7 @@ export default {
                 }
                 this.posts = await res.json();
                 this.searched = true;
+                this.searching = false;
                 
                 // Automatically generate composite if posts found
                 if (this.posts.length > 0) {
@@ -144,7 +145,7 @@ export default {
             } catch (e) {
                 this.error = e.message;
             } finally {
-                this.loading = false;
+                this.searching = false;
             }
         },
         async generateComposite() {
@@ -152,7 +153,7 @@ export default {
             this.error = null;
             try {
                 const imageUrls = this.posts.map(p => p.imageUrl);
-                const res = await fetch('/api/review/composite', {
+                const res = await fetch('/api/history/composite', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ imageUrls })
@@ -211,7 +212,7 @@ export default {
                 formData.append('altText', this.shareAltText);
                 formData.append('text', this.sharePostText);
                 
-                const res = await fetch('/api/review/post-composite', {
+                const res = await fetch('/api/history/post-composite', {
                     method: 'POST',
                     body: formData
                 });

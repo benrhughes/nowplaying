@@ -7,7 +7,7 @@ using NowPlaying.Services;
 /// <summary>
 /// Endpoints for reviewing listening history.
 /// </summary>
-public static class ReviewEndpoints
+public static class HistoryEndpoints
 {
     /// <summary>
     /// Searches for #nowplaying posts in a date range.

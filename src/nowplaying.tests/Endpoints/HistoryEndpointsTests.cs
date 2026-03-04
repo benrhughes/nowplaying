@@ -9,13 +9,13 @@ using NowPlaying.Models;
 using NowPlaying.Services;
 using Xunit;
 
-public class ReviewEndpointsTests
+public class HistoryEndpointsTests
 {
     private readonly Mock<IMastodonService> _mastodonServiceMock;
     private readonly Mock<IImageService> _imageServiceMock;
     private readonly DefaultHttpContext _context;
 
-    public ReviewEndpointsTests()
+    public HistoryEndpointsTests()
     {
         _mastodonServiceMock = new Mock<IMastodonService>();
         _imageServiceMock = new Mock<IImageService>();
@@ -49,7 +49,7 @@ public class ReviewEndpointsTests
     public async Task Search_ReturnsUnauthorized_WhenNoSession()
     {
         // Act
-        var result = await ReviewEndpoints.Search(_context, DateTime.Now, DateTime.Now, _mastodonServiceMock.Object);
+        var result = await HistoryEndpoints.Search(_context, DateTime.Now, DateTime.Now, _mastodonServiceMock.Object);
 
         // Assert
         Assert.IsType<UnauthorizedHttpResult>(result);
@@ -74,7 +74,7 @@ public class ReviewEndpointsTests
             .ReturnsAsync(posts);
 
         // Act
-        var result = await ReviewEndpoints.Search(_context, DateTime.Now.AddDays(-1), DateTime.Now, _mastodonServiceMock.Object);
+        var result = await HistoryEndpoints.Search(_context, DateTime.Now.AddDays(-1), DateTime.Now, _mastodonServiceMock.Object);
 
         // Assert
         // We use IValueHttpResult because we can't easily assert the generic type of Ok<List<AnonymousType>>
@@ -88,7 +88,7 @@ public class ReviewEndpointsTests
     public async Task Composite_ReturnsBadRequest_WhenNoUrls()
     {
         var request = new CompositeRequest { ImageUrls = new List<string>() };
-        var result = await ReviewEndpoints.Composite(request, _imageServiceMock.Object);
+        var result = await HistoryEndpoints.Composite(request, _imageServiceMock.Object);
         
         var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
 #pragma warning disable CS8602
@@ -103,7 +103,7 @@ public class ReviewEndpointsTests
         _imageServiceMock.Setup(x => x.GenerateCompositeAsync(It.IsAny<IEnumerable<string>>()))
             .ReturnsAsync(new byte[] { 1, 2, 3 });
 
-        var result = await ReviewEndpoints.Composite(request, _imageServiceMock.Object) ?? throw new InvalidOperationException("Result should not be null");
+        var result = await HistoryEndpoints.Composite(request, _imageServiceMock.Object) ?? throw new InvalidOperationException("Result should not be null");
 
         var fileResult = Assert.IsType<FileContentHttpResult>(result);
         Assert.Equal("image/jpeg", fileResult.ContentType);
@@ -114,7 +114,7 @@ public class ReviewEndpointsTests
     public async Task PostComposite_ReturnsUnauthorized_WhenNoSession()
     {
         // Act
-        var result = await ReviewEndpoints.PostComposite(_context, _mastodonServiceMock.Object);
+        var result = await HistoryEndpoints.PostComposite(_context, _mastodonServiceMock.Object);
 
         // Assert
         Assert.IsType<UnauthorizedHttpResult>(result);
@@ -139,7 +139,7 @@ public class ReviewEndpointsTests
         _context.Request.Form = formCollection;
 
         // Act
-        var result = await ReviewEndpoints.PostComposite(_context, _mastodonServiceMock.Object);
+        var result = await HistoryEndpoints.PostComposite(_context, _mastodonServiceMock.Object);
 
         // Assert
         var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
@@ -169,7 +169,7 @@ public class ReviewEndpointsTests
         _context.Request.Form = formCollection;
 
         // Act
-        var result = await ReviewEndpoints.PostComposite(_context, _mastodonServiceMock.Object);
+        var result = await HistoryEndpoints.PostComposite(_context, _mastodonServiceMock.Object);
 
         // Assert
         var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
@@ -206,7 +206,7 @@ public class ReviewEndpointsTests
             .ReturnsAsync(("status-456", "https://mastodon.social/@user/456"));
 
         // Act
-        var result = await ReviewEndpoints.PostComposite(_context, _mastodonServiceMock.Object);
+        var result = await HistoryEndpoints.PostComposite(_context, _mastodonServiceMock.Object);
 
         // Assert
         var okResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
@@ -248,7 +248,7 @@ public class ReviewEndpointsTests
             .ThrowsAsync(new HttpRequestException("Upload failed"));
 
         // Act
-        var result = await ReviewEndpoints.PostComposite(_context, _mastodonServiceMock.Object);
+        var result = await HistoryEndpoints.PostComposite(_context, _mastodonServiceMock.Object);
 
         // Assert
         var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);

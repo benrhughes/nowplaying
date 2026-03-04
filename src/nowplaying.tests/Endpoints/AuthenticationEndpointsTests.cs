@@ -8,14 +8,14 @@ using Xunit;
 
 namespace NowPlaying.Tests.Endpoints;
 
-public class AuthEndpointsTests
+public class AuthenticationEndpointsTests
 {
     private readonly Mock<IMastodonService> _mastodonServiceMock;
     private readonly Mock<HttpContext> _httpContextMock;
     private readonly Mock<ISession> _sessionMock;
     private readonly Mock<ILoggerFactory> _loggerFactoryMock;
 
-    public AuthEndpointsTests()
+    public AuthenticationEndpointsTests()
     {
         _mastodonServiceMock = new Mock<IMastodonService>();
         _httpContextMock = new Mock<HttpContext>();
@@ -31,7 +31,7 @@ public class AuthEndpointsTests
     public void Login_WithSessionInstance_ReturnsResult()
     {
         // Act
-        var result = AuthEndpoints.Login(_httpContextMock.Object, "mastodon.social", "client-id");
+        var result = AuthenticationEndpoints.Login(_httpContextMock.Object, "mastodon.social", "client-id");
 
         // Assert
         Assert.NotNull(result);
@@ -41,7 +41,7 @@ public class AuthEndpointsTests
     public void Login_WithParameterInstance_ReturnsResult()
     {
         // Act
-        var result = AuthEndpoints.Login(_httpContextMock.Object, "mastodon.social", "client-id");
+        var result = AuthenticationEndpoints.Login(_httpContextMock.Object, "mastodon.social", "client-id");
 
         // Assert
         Assert.NotNull(result);
@@ -51,7 +51,7 @@ public class AuthEndpointsTests
     public void Login_WithMissingInstance_ReturnsResult()
     {
         // Act
-        var result = AuthEndpoints.Login(_httpContextMock.Object, null, null);
+        var result = AuthenticationEndpoints.Login(_httpContextMock.Object, null, null);
 
         // Assert
         Assert.NotNull(result);
@@ -61,7 +61,7 @@ public class AuthEndpointsTests
     public void Login_WithMissingClientId_ReturnsResult()
     {
         // Act
-        var result = AuthEndpoints.Login(_httpContextMock.Object, "mastodon.social", null);
+        var result = AuthenticationEndpoints.Login(_httpContextMock.Object, "mastodon.social", null);
 
         // Assert
         Assert.NotNull(result);
@@ -75,7 +75,7 @@ public class AuthEndpointsTests
             .ReturnsAsync("access-token");
 
         // Act
-        var result = await AuthEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object);
+        var result = await AuthenticationEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object);
 
         // Assert
         Assert.NotNull(result);
@@ -85,7 +85,7 @@ public class AuthEndpointsTests
     public async Task Callback_WithNullCode_ReturnsResult()
     {
         // Arrange & Act
-        var result = await AuthEndpoints.Callback(_httpContextMock.Object, null, _mastodonServiceMock.Object, _loggerFactoryMock.Object);
+        var result = await AuthenticationEndpoints.Callback(_httpContextMock.Object, null, _mastodonServiceMock.Object, _loggerFactoryMock.Object);
 
         // Assert
         Assert.NotNull(result);
@@ -95,7 +95,7 @@ public class AuthEndpointsTests
     public async Task Callback_WithMissingInstance_ReturnsResult()
     {
         // Arrange & Act
-        var result = await AuthEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object);
+        var result = await AuthenticationEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object);
 
         // Assert
         Assert.NotNull(result);
@@ -105,7 +105,7 @@ public class AuthEndpointsTests
     public async Task Callback_WithMissingClientId_ReturnsResult()
     {
         // Arrange & Act
-        var result = await AuthEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object);
+        var result = await AuthenticationEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object);
 
         // Assert
         Assert.NotNull(result);
@@ -115,7 +115,7 @@ public class AuthEndpointsTests
     public async Task Callback_WithMissingClientSecret_ReturnsResult()
     {
         // Arrange & Act
-        var result = await AuthEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object);
+        var result = await AuthenticationEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object);
 
         // Assert
         Assert.NotNull(result);
@@ -129,7 +129,7 @@ public class AuthEndpointsTests
             .ThrowsAsync(new HttpRequestException("Service error"));
 
         // Act
-        var result = await AuthEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object);
+        var result = await AuthenticationEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object);
 
         // Assert
         Assert.NotNull(result);
@@ -139,7 +139,7 @@ public class AuthEndpointsTests
     public void Logout_ClearsSessionAndReturnsResult()
     {
         // Arrange & Act
-        var result = AuthEndpoints.Logout(_httpContextMock.Object);
+        var result = AuthenticationEndpoints.Logout(_httpContextMock.Object);
 
         // Assert
         Assert.NotNull(result);
