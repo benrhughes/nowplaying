@@ -1,4 +1,4 @@
-# Instructions for AI Agents - BcMasto
+# Instructions for AI Agents - NowPlaying
 
 ## 🛡️ General Rules
 - **Permissions**: NEVER run `scp`, `rsync`, or perform `git` write operations (commit, push, etc.) without explicit permission.
@@ -17,11 +17,13 @@
 - **Spacing**: Maintain a single blank line between class members, including fields (satisfies **SA1516**).
 - **Validation**: Use model validation and the `ValidationFilter` for request validation on Minimal API endpoints.
 - **JSON**: Prefer `System.Text.Json` over `Newtonsoft.Json`.
+- **Supression**: do not suppress stylecop warnings without explicit approval
 
 ## 🧪 Testing
 - **Framework**: xUnit and Moq.
 - **Coverage**: ALWAYS add unit test coverage for new code changes in the `bcmasto.tests` project.
 - **Mocks**: When testing services that use `HttpClient`, use `MockHttpMessageHandler` and a real `HttpClient` instance rather than mocking `IHttpClientFactory`.
+- **Frontend Tests**: Run `npm test -- --run` (NOT just `npm test`) to exit cleanly after tests complete. Without `--run`, vitest stays in watch mode and will hang.
 
 ## 📖 Related Documentation
 - **Onboarding**: Read [SETUP.md](SETUP.md) for environment configuration.

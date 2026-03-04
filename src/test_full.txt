@@ -1,0 +1,17 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  NowPlaying -> /Users/ben/Documents/dev/bcmasto/src/nowplaying/bin/Debug/net10.0/NowPlaying.dll
+  nowplaying.tests -> /Users/ben/Documents/dev/bcmasto/src/nowplaying.tests/bin/Debug/net10.0/nowplaying.tests.dll
+Test run for /Users/ben/Documents/dev/bcmasto/src/nowplaying.tests/bin/Debug/net10.0/nowplaying.tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (arm64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+  Failed NowPlaying.Tests.Services.MastodonServiceTests.GetTaggedPostsAsync_ReturnsFilteredPosts [214 ms]
+  Error Message:
+   Assert.Single() Failure: The collection was empty
+  Stack Trace:
+     at NowPlaying.Tests.Services.MastodonServiceTests.GetTaggedPostsAsync_ReturnsFilteredPosts() in /Users/ben/Documents/dev/bcmasto/src/nowplaying.tests/Services/MastodonServiceTests.cs:line 216
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     1, Passed:    75, Skipped:     0, Total:    76, Duration: 274 ms - nowplaying.tests.dll (net10.0)

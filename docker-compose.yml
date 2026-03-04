@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
-  bcmasto:
+  nowplaying:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: bcmastodn
+    container_name: nowplaying
     ports:
       - "${PORT}:${PORT}"
     env_file:

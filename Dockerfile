@@ -6,24 +6,24 @@ WORKDIR /src
 ARG RUN_TESTS=false
 
 # Copy the solution and project files
-COPY ["src/bcmasto/BcMasto.csproj", "bcmasto/"]
-COPY ["src/bcmasto.tests/bcmasto.tests.csproj", "bcmasto.tests/"]
-COPY ["src/bcmasto.sln", "."]
+COPY ["src/nowplaying/NowPlaying.csproj", "nowplaying/"]
+COPY ["src/nowplaying.tests/nowplaying.tests.csproj", "nowplaying.tests/"]
+COPY ["src/nowplaying.sln", "."]
 COPY [".stylecop.json", ".editorconfig", "../"]
 
 # Restore dependencies
-RUN dotnet restore bcmasto.sln
+RUN dotnet restore nowplaying.sln
 
 # Copy the rest of the source code
 COPY src/ .
 
-RUN dotnet test bcmasto.tests/bcmasto.tests.csproj --no-restore --verbosity minimal /p:RunAnalyzers=false
+RUN dotnet test nowplaying.tests/nowplaying.tests.csproj --no-restore --verbosity minimal /p:RunAnalyzers=false
 
 # Build the application
-RUN cd bcmasto && dotnet build -c Release --no-restore
+RUN cd nowplaying && dotnet build -c Release --no-restore
 
 # Publish the application
-RUN cd bcmasto && dotnet publish -c Release -o /app/publish --no-build
+RUN cd nowplaying && dotnet publish -c Release -o /app/publish --no-build
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
@@ -43,4 +43,4 @@ EXPOSE 4444
 ENV ASPNETCORE_URLS=http://+:4444
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-ENTRYPOINT ["dotnet", "BcMasto.dll"]
+ENTRYPOINT ["dotnet", "NowPlaying.dll"]

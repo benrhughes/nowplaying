@@ -1,18 +1,18 @@
-# Bandcamp to Mastodon Poster
+# NowPlaying
 
-A simple web application that automates sharing Bandcamp albums to Mastodon. Paste a Bandcamp album link, preview the post, and publish directly to your Mastodon instance.
+A web application to share Bandcamp albums and review listening history on Mastodon. Paste a Bandcamp album link, preview the post, and publish directly to your Mastodon instance. Or generate a composite image of your recent #nowplaying posts.
 
-**Built with**: C# .NET, vanilla JavaScript, and Mastodon OAuth 2.0
+**Built with**: C# .NET, Vue.js, and Mastodon OAuth 2.0
 
 ## Features
 
 - 🎵 One-click Bandcamp album metadata extraction
-- 👀 Preview & edit posts before publishing  
-- 🖼️ Automatic album cover upload with alt text
+- 👀 Preview & edit posts before publishing
+- 📅 Review recent listening history
+- 🖼️ Generate composite images of albums
 - 🔐 OAuth 2.0 authentication with Mastodon
-- 🌐 Dynamic instance registration (register any Mastodon instance on the fly)
+- 🌐 Dynamic instance registration
 - 🐳 Docker containerized deployment
-- 🚀 Self-hosted with minimal dependencies
 - ✅ Comprehensive unit tests
 
 ## Quick Start

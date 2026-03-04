@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "NowPlaying": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "http://localhost:4444",
+      "applicationUrl": "http://localhost:4444",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
