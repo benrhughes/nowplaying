@@ -9,7 +9,7 @@ public class RequestModelsTests
     public void RegisterRequest_CreatesWithInstance()
     {
         // Arrange & Act
-        var request = new RegisterRequest("mastodon.social");
+        var request = new RegisterRequest { Instance = "mastodon.social" };
 
         // Assert
         Assert.Equal("mastodon.social", request.Instance);
@@ -19,7 +19,7 @@ public class RequestModelsTests
     public void ScrapeRequest_CreatesWithUrl()
     {
         // Arrange & Act
-        var request = new ScrapeRequest("https://example.bandcamp.com/album/test");
+        var request = new ScrapeRequest { Url = "https://example.bandcamp.com/album/test" };
 
         // Assert
         Assert.Equal("https://example.bandcamp.com/album/test", request.Url);
@@ -29,7 +29,12 @@ public class RequestModelsTests
     public void PostRequest_CreatesWithRequiredFields()
     {
         // Arrange & Act
-        var request = new PostRequest("Test post", "https://example.com/image.jpg", "Alt text");
+        var request = new PostRequest
+        {
+            Text = "Test post",
+            ImageUrl = "https://example.com/image.jpg",
+            AltText = "Alt text"
+        };
 
         // Assert
         Assert.Equal("Test post", request.Text);
@@ -41,7 +46,11 @@ public class RequestModelsTests
     public void PostRequest_CreatesWithNullAltText()
     {
         // Arrange & Act
-        var request = new PostRequest("Test post", "https://example.com/image.jpg");
+        var request = new PostRequest
+        {
+            Text = "Test post",
+            ImageUrl = "https://example.com/image.jpg"
+        };
 
         // Assert
         Assert.Equal("Test post", request.Text);

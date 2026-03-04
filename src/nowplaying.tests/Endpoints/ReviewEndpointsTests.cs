@@ -87,7 +87,7 @@ public class ReviewEndpointsTests
     [Fact]
     public async Task Composite_ReturnsBadRequest_WhenNoUrls()
     {
-        var request = new CompositeRequest(new List<string>());
+        var request = new CompositeRequest { ImageUrls = new List<string>() };
         var result = await ReviewEndpoints.Composite(request, _imageServiceMock.Object);
         
         var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
@@ -99,7 +99,7 @@ public class ReviewEndpointsTests
     [Fact]
     public async Task Composite_ReturnsFile_WhenSuccess()
     {
-        var request = new CompositeRequest(new List<string> { "http://img.jpg" });
+        var request = new CompositeRequest { ImageUrls = new List<string> { "http://img.jpg" } };
         _imageServiceMock.Setup(x => x.GenerateCompositeAsync(It.IsAny<IEnumerable<string>>()))
             .ReturnsAsync(new byte[] { 1, 2, 3 });
 

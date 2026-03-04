@@ -43,7 +43,7 @@ public class ApiEndpointsTests
     public async Task Register_WithValidInstance_ReturnsResult()
     {
         // Arrange
-        var request = new RegisterRequest("https://mastodon.social");
+        var request = new RegisterRequest { Instance = "https://mastodon.social" };
         _mastodonServiceMock.Setup(m => m.RegisterAppAsync("mastodon.social", _config.RedirectUri))
             .ReturnsAsync(("client-id", "client-secret"));
 
@@ -58,7 +58,7 @@ public class ApiEndpointsTests
     public void RegisterRequest_WithNullInstance_FailsValidation()
     {
         // Arrange
-        var request = new RegisterRequest(null!);
+        var request = new RegisterRequest { Instance = null! };
         var validationResults = new List<ValidationResult>();
 
         // Act
@@ -93,7 +93,7 @@ public class ApiEndpointsTests
     public async Task Scrape_WithValidBandcampUrl_ReturnsResult()
     {
         // Arrange
-        var request = new ScrapeRequest("https://artist.bandcamp.com/album/test");
+        var request = new ScrapeRequest { Url = "https://artist.bandcamp.com/album/test" };
         var scrapeResponse = new ScrapeResponse(
             Title: "Test Album – Test Artist",
             Artist: "Test Artist",
@@ -116,7 +116,7 @@ public class ApiEndpointsTests
     public void ScrapeRequest_WithNullUrl_FailsValidation()
     {
         // Arrange
-        var request = new ScrapeRequest(null!);
+        var request = new ScrapeRequest { Url = null! };
         var validationResults = new List<ValidationResult>();
 
         // Act
@@ -131,7 +131,7 @@ public class ApiEndpointsTests
     public void ScrapeRequest_WithInvalidUrl_FailsValidation()
     {
         // Arrange
-        var request = new ScrapeRequest("not a valid url");
+        var request = new ScrapeRequest { Url = "not a valid url" };
         var validationResults = new List<ValidationResult>();
 
         // Act
@@ -146,7 +146,7 @@ public class ApiEndpointsTests
     public async Task Scrape_WithNonBandcampUrl_ReturnsResult()
     {
         // Arrange
-        var request = new ScrapeRequest("https://spotify.com/album/test");
+        var request = new ScrapeRequest { Url = "https://spotify.com/album/test" };
 
         // Act
         var result = await ApiEndpoints.Scrape(_httpContextMock.Object, request, _bandcampServiceMock.Object, _loggerFactoryMock.Object);
@@ -159,7 +159,7 @@ public class ApiEndpointsTests
     public async Task Post_WithValidRequest_ReturnsResult()
     {
         // Arrange
-        var request = new PostRequest("Check this out!", "https://example.com/image.jpg");
+        var request = new PostRequest { Text = "Check this out!", ImageUrl = "https://example.com/image.jpg" };
         
         var instanceBytes = System.Text.Encoding.UTF8.GetBytes("https://mastodon.social");
         var tokenBytes = System.Text.Encoding.UTF8.GetBytes("test-token");
@@ -186,7 +186,7 @@ public class ApiEndpointsTests
     public async Task Post_WithoutAuthentication_ReturnsResult()
     {
         // Arrange
-        var request = new PostRequest("Check this out!", "https://example.com/image.jpg");
+        var request = new PostRequest { Text = "Check this out!", ImageUrl = "https://example.com/image.jpg" };
  
         // Act
         var result = await ApiEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _imageServiceMock.Object, _loggerFactoryMock.Object);
@@ -199,7 +199,7 @@ public class ApiEndpointsTests
     public void PostRequest_WithMissingText_FailsValidation()
     {
         // Arrange
-        var request = new PostRequest(null!, "https://example.com/image.jpg");
+        var request = new PostRequest { Text = null!, ImageUrl = "https://example.com/image.jpg" };
         var validationResults = new List<ValidationResult>();
 
         // Act
@@ -214,7 +214,7 @@ public class ApiEndpointsTests
     public void PostRequest_WithMissingImage_FailsValidation()
     {
         // Arrange
-        var request = new PostRequest("Check this out!", null!);
+        var request = new PostRequest { Text = "Check this out!", ImageUrl = null! };
         var validationResults = new List<ValidationResult>();
 
         // Act

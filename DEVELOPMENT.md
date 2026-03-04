@@ -455,8 +455,7 @@ Example test using xUnit:
 public async Task Register_WithValidInstance_ReturnsSuccess()
 {
     // Arrange
-    var instance = "https://mastodon.social";
-    var request = new RegisterRequest(instance);
+    var request = new RegisterRequest { Instance = "https://mastodon.social" };
     
     // Act
     var result = await ApiEndpoints.Register(context, request, service, config);
