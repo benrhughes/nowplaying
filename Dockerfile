@@ -38,9 +38,6 @@ RUN useradd -m -u 10001 appuser && \
     chown -R appuser:appuser /app
 USER appuser
 
-EXPOSE 4444
-
-ENV ASPNETCORE_URLS=http://+:4444
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 ENTRYPOINT ["dotnet", "NowPlaying.dll"]
