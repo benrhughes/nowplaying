@@ -42,6 +42,9 @@ public static class ServiceCollectionExtensions
 
         services.AddHttpClient<IBandcampService, BandcampService>(configureClient);
 
+        // In-memory registration store for app credentials per instance
+        services.AddSingleton<IRegistrationStore, RegistrationStore>();
+
         return services;
     }
 
@@ -58,7 +61,7 @@ public static class ServiceCollectionExtensions
 
         authGroup.MapGet("/login", AuthenticationEndpoints.Login);
         authGroup.MapGet("/callback", AuthenticationEndpoints.Callback);
-        authGroup.MapGet("/logout", AuthenticationEndpoints.Logout);
+        authGroup.MapGet("/logout", (Delegate)AuthenticationEndpoints.Logout);
 
         var apiGroup = app.MapGroup("/api")
             .WithTags("API");

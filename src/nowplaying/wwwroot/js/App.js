@@ -6,23 +6,38 @@ export default {
     components: { Post, Review, InstanceSelection },
     template: `
         <main class="container">
-            <header class="app-header">
-                <div class="header-top">
-                    <h1>NowPlaying</h1>
-                    <div id="auth-status">
-                        <span v-if="authenticated && instance">
-                            Logged in to <a :href="instance" target="_blank" class="instance-link">{{ instanceName }}</a>
-                        </span>
-                        <a v-if="authenticated" href="/auth/logout" role="button" class="secondary outline">Logout</a>
-                    </div>
-                </div>
-                <div v-if="authenticated" class="tabs-wrapper">
-                    <div class="tabs">
-                        <a href="#" @click.prevent="view = 'post'" class="tab-link" :class="{ active: view === 'post' }">Post from Bandcamp</a>
-                        <a href="#" @click.prevent="view = 'review'" class="tab-link" :class="{ active: view === 'review' }">#NowPlaying History</a>
-                    </div>
-                </div>
-            </header>
+            <nav class="nav">
+                <ul>
+                    <li>
+                        <hgroup>
+                            <h1>NowPlaying</h1>
+                            <h2 class="subtitle">
+                                Share your music listening with 
+                                <a v-if="registered && instance" :href="instance" target="_blank">{{ instanceName }}</a>
+                                <span v-else>Mastodon</span>
+                            </h2>
+                        </hgroup>
+                    </li>
+                </ul>
+                <ul>
+                    <li>
+                        <a v-if="authenticated" href="/auth/logout">Log out</a>
+                    </li>
+                    <li>
+                        <select id="theme-select" v-model="theme" @change="setTheme(theme)">
+                            <option value="auto">System</option>
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </li>
+                </ul>
+            </nav>
+            <nav>
+                <ul>
+                    <li v-if="authenticated"><a href="#" @click.prevent="view = 'post'" :aria-current="view === 'post' ? 'page' : null">Post a Bandcamp Album</a></li>
+                    <li v-if="authenticated"><a href="#" @click.prevent="view = 'review'" :aria-current="view === 'review' ? 'page' : null">#NowPlaying History</a></li>
+                </ul>
+            </nav>
 
             <div v-if="!authenticated">
                 <InstanceSelection 
@@ -30,9 +45,11 @@ export default {
                     @registered="handleInstanceRegistered"
                 />
                 <article v-else>
-                    <header><strong>Ready to Login</strong></header>
-                    <p>Instance registered: <strong>{{ instanceName }}</strong></p>
-                    <a href="/auth/login" role="button" class="w-100">Login with Mastodon</a>
+                    <hgroup>
+                        <h2>Ready to Login</h2>
+                        <p>Instance registered: <strong>{{ instanceName }}</strong></p>
+                    </hgroup>
+                    <a href="/auth/login">Login with Mastodon</a>
                 </article>
             </div>
             <keep-alive v-else>
@@ -49,7 +66,8 @@ export default {
             view: 'post',
             authenticated: false,
             registered: false,
-            instance: null
+            instance: null,
+            theme: 'auto'
         }
     },
     computed: {
@@ -63,8 +81,30 @@ export default {
     },
     created() {
         this.checkAuth();
+        this.initTheme();
     },
     methods: {
+            initTheme() {
+                const key = 'picoPreferredColorScheme';
+                const stored = window.localStorage?.getItem(key) ?? 'auto';
+                this._themeKey = key;
+                this.setTheme(stored);
+            },
+
+            setTheme(scheme) {
+                // scheme: 'light' | 'dark' | 'auto'
+                this.theme = scheme;
+                if (scheme === 'auto') {
+                    // remove explicit attribute to follow system
+                    document.documentElement.removeAttribute('data-theme');
+                    // store as 'auto' so we can keep preference
+                    window.localStorage?.setItem(this._themeKey, 'auto');
+                } else {
+                    document.documentElement.setAttribute('data-theme', scheme);
+                    window.localStorage?.setItem(this._themeKey, scheme);
+                }
+            },
+
         async checkAuth() {
             try {
                 const res = await fetch('/api/config/status');

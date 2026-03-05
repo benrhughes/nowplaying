@@ -35,7 +35,7 @@ public class ImageService(HttpClient httpClient, ILogger<ImageService> logger)
             {
                 try
                 {
-                    var data = await this.DownloadImageAsync(url);
+                    var data = await DownloadImageAsync(url);
                     var img = Image.Load(data);
                     images.Add(img);
                 }

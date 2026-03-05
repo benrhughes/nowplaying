@@ -17,13 +17,15 @@ public static class ConfigurationEndpoints
     /// <param name="mastodonService">The Mastodon service.</param>
     /// <param name="config">The app configuration.</param>
     /// <param name="loggerFactory">The logger factory.</param>
+    /// <param name="registrationStore">The registration store.</param>
     /// <returns>The registration response.</returns>
     public static async Task<IResult> Register(
         HttpContext context,
         RegisterRequest request,
         IMastodonService mastodonService,
         AppConfig config,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory,
+        IRegistrationStore registrationStore)
     {
         string instance;
         try
@@ -39,10 +41,9 @@ public static class ConfigurationEndpoints
         {
             var (clientId, clientSecret) = await mastodonService.RegisterAppAsync(instance, config.RedirectUri);
 
+            // Persist instance in session for pre-auth flows, but keep client credentials in server-side store
             context.Session.SetString("instance", instance);
-            context.Session.SetString("clientId", clientId);
-            context.Session.SetString("clientSecret", clientSecret);
-            context.Session.SetString("redirectUri", config.RedirectUri);
+            registrationStore.Add(instance, clientId, clientSecret, config.RedirectUri);
 
             return Results.Ok(new RegistrationResponse(true, instance));
         }
@@ -65,15 +66,16 @@ public static class ConfigurationEndpoints
     /// </summary>
     /// <param name="context">The HTTP context.</param>
     /// <returns>The status response.</returns>
-    public static IResult Status(HttpContext context)
+    /// <param name="registrationStore">The registration store.</param>
+    public static IResult Status(HttpContext context, IRegistrationStore registrationStore)
     {
-        var accessToken = context.Session.GetString("accessToken");
-        var instance = context.Session.GetString("instance");
-        var clientId = context.Session.GetString("clientId");
+        var instance = context.User.GetInstance() ?? context.Session.GetString("instance");
+
+        var registered = !string.IsNullOrEmpty(instance) && registrationStore.Has(instance);
 
         return Results.Ok(new StatusResponse(
-            Authenticated: !string.IsNullOrEmpty(accessToken),
+            Authenticated: context.User.Identity?.IsAuthenticated ?? false,
             Instance: instance,
-            Registered: !string.IsNullOrEmpty(clientId)));
+            Registered: registered));
     }
 }

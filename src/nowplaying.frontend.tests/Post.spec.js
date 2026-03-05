@@ -9,81 +9,13 @@ describe('Post Component', () => {
     global.fetch = vi.fn();
   });
 
-  it('renders instance selection when not registered', () => {
-    wrapper = mount(Post, {
-      props: {
-        authenticated: false,
-        registered: false
-      }
-    });
-
-    expect(wrapper.find('h2').text()).toContain('Welcome to NowPlaying');
-    expect(wrapper.find('input[type="url"]').exists()).toBe(true);
-  });
-
-  it('renders login prompt when not authenticated', () => {
-    wrapper = mount(Post, {
-      props: {
-        authenticated: false,
-        registered: true
-      }
-    });
-
-    expect(wrapper.find('h2').text()).toContain('Connect to Mastodon');
-    expect(wrapper.find('a[href="/auth/login"]').exists()).toBe(true);
-  });
-
-  it('renders scrape form when authenticated', async () => {
-    wrapper = mount(Post, {
-      props: {
-        authenticated: true,
-        registered: true
-      }
-    });
+  it('renders scrape form', async () => {
+    wrapper = mount(Post);
 
     await wrapper.vm.$nextTick();
-    const h2 = wrapper.findAll('h2').find(el => el.text().includes('Post an Album'));
+    const h2 = wrapper.findAll('h2').find(el => el.text().includes('Post a Bandcamp Album'));
     expect(h2).toBeDefined();
     expect(wrapper.find('input[type="url"]').exists()).toBe(true);
-  });
-
-  it('registers instance with correct API call', async () => {
-    global.fetch.mockResolvedValueOnce({ ok: true });
-
-    wrapper = mount(Post, {
-      props: {
-        authenticated: false,
-        registered: false
-      }
-    });
-
-    wrapper.vm.instanceUrl = 'https://fosstodon.org';
-    await wrapper.vm.registerInstance();
-
-    expect(global.fetch).toHaveBeenCalledWith('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ instance: 'https://fosstodon.org' })
-    });
-  });
-
-  it('handles registration error', async () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: false,
-      json: async () => ({ error: 'Invalid instance URL' })
-    });
-
-    wrapper = mount(Post, {
-      props: {
-        authenticated: false,
-        registered: false
-      }
-    });
-
-    wrapper.vm.instanceUrl = 'not-a-url';
-    await wrapper.vm.registerInstance();
-
-    expect(wrapper.vm.error).toContain('Invalid instance URL');
   });
 
   it('scrapes bandcamp URL', async () => {
@@ -97,18 +29,13 @@ describe('Post Component', () => {
       })
     });
 
-    wrapper = mount(Post, {
-      props: {
-        authenticated: true,
-        registered: true
-      }
-    });
+    wrapper = mount(Post);
 
     wrapper.vm.url = 'https://testartist.bandcamp.com/album/test';
     await wrapper.vm.scrape();
 
     expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/scrape'),
+      expect.stringContaining('/api/posting/scrape'),
       expect.any(Object)
     );
     expect(wrapper.vm.scrapedData).not.toBeNull();
@@ -125,12 +52,7 @@ describe('Post Component', () => {
       })
     });
 
-    wrapper = mount(Post, {
-      props: {
-        authenticated: true,
-        registered: true
-      }
-    });
+    wrapper = mount(Post);
 
     wrapper.vm.url = 'https://testartist.bandcamp.com/album/test';
     await wrapper.vm.scrape();
@@ -150,12 +72,7 @@ describe('Post Component', () => {
       json: async () => ({ postId: '123', url: 'https://mastodon.social/@user/123' })
     });
 
-    wrapper = mount(Post, {
-      props: {
-        authenticated: true,
-        registered: true
-      }
-    });
+    wrapper = mount(Post);
 
     wrapper.vm.scrapedData = {
       artist: 'Test Artist',
@@ -168,18 +85,13 @@ describe('Post Component', () => {
     await wrapper.vm.post();
 
     expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/post'),
+      expect.stringContaining('/api/posting/post'),
       expect.any(Object)
     );
   });
 
   it('resets form when clicking back', async () => {
-    wrapper = mount(Post, {
-      props: {
-        authenticated: true,
-        registered: true
-      }
-    });
+    wrapper = mount(Post);
 
     wrapper.vm.scrapedData = { artist: 'Test', album: 'Album' };
     wrapper.vm.error = 'Some error';
@@ -194,12 +106,7 @@ describe('Post Component', () => {
   });
 
   it('disables button while loading', async () => {
-    wrapper = mount(Post, {
-      props: {
-        authenticated: true,
-        registered: true
-      }
-    });
+    wrapper = mount(Post);
 
     wrapper.vm.loading = true;
     await wrapper.vm.$nextTick();

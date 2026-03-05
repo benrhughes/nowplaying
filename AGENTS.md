@@ -15,7 +15,7 @@
 ## 📝 Coding Standards (StyleCop Alignment)
 - **Documentation**: All public and protected members MUST have XML documentation (`/// <summary>`) to satisfy rule **SA1600**. Use `<inheritdoc/>` for implementation methods.
 - **Spacing**: Maintain a single blank line between class members, including fields (satisfies **SA1516**).
-- **Validation**: Use model validation and the `ValidationFilter` for request validation on Minimal API endpoints.
+- **Validation**: Use model binding and validation and the `ValidationFilter` for request validation on Minimal API endpoints.
 - **JSON**: Prefer `System.Text.Json` over `Newtonsoft.Json`.
 - **Supression**: do not suppress stylecop warnings without explicit approval
 

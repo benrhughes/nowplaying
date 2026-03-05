@@ -9,12 +9,15 @@ using Xunit;
 
 namespace NowPlaying.Tests.Endpoints;
 
+#pragma warning disable CS8601
+
 public class ConfigurationEndpointsTests
 {
     private readonly Mock<IMastodonService> _mastodonServiceMock;
     private readonly Mock<HttpContext> _httpContextMock;
     private readonly Mock<ISession> _sessionMock;
     private readonly Mock<ILoggerFactory> _loggerFactoryMock;
+    private readonly Mock<IRegistrationStore> _registrationStoreMock;
     private readonly AppConfig _config;
 
     public ConfigurationEndpointsTests()
@@ -32,7 +35,13 @@ public class ConfigurationEndpointsTests
             SessionSecret = "dev-secret"
         };
 
-        _httpContextMock.Setup(h => h.Session).Returns(_sessionMock.Object);
+        _httpContextMock.SetupGet(h => h.Session).Returns(() => _sessionMock.Object);
+        _httpContextMock.SetupGet(h => h.User).Returns(new System.Security.Claims.ClaimsPrincipal());
+
+        // Default session TryGetValue to false so GetString returns null
+        _sessionMock.Setup(s => s.TryGetValue(It.IsAny<string>(), out It.Ref<byte[]>.IsAny)).Returns(false);
+
+        _registrationStoreMock = new Mock<IRegistrationStore>();
     }
 
     [Fact]
@@ -44,7 +53,7 @@ public class ConfigurationEndpointsTests
             .ReturnsAsync(("client-id", "client-secret"));
 
         // Act
-        var result = await ConfigurationEndpoints.Register(_httpContextMock.Object, request, _mastodonServiceMock.Object, _config, _loggerFactoryMock.Object);
+        var result = await ConfigurationEndpoints.Register(_httpContextMock.Object, request, _mastodonServiceMock.Object, _config, _loggerFactoryMock.Object, _registrationStoreMock.Object);
 
         // Assert
         Assert.NotNull(result);
@@ -69,7 +78,7 @@ public class ConfigurationEndpointsTests
     public void Status_WithAuthenticatedSession_ReturnsResult()
     {
         // Act
-        var result = ConfigurationEndpoints.Status(_httpContextMock.Object);
+        var result = ConfigurationEndpoints.Status(_httpContextMock.Object, _registrationStoreMock.Object);
 
         // Assert
         Assert.NotNull(result);
@@ -79,7 +88,7 @@ public class ConfigurationEndpointsTests
     public void Status_WithUnauthenticatedSession_ReturnsResult()
     {
         // Act
-        var result = ConfigurationEndpoints.Status(_httpContextMock.Object);
+        var result = ConfigurationEndpoints.Status(_httpContextMock.Object, _registrationStoreMock.Object);
 
         // Assert
         Assert.NotNull(result);

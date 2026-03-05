@@ -4,8 +4,10 @@
 export default {
     template: `
         <article>
-            <header><strong>Select Your Mastodon Instance</strong></header>
-            <p>Enter your Mastodon instance URL to continue:</p>
+            <hgroup>
+                <h2>Select Your Mastodon Instance</h2>
+                <p>Enter your Mastodon instance URL to continue:</p>
+            </hgroup>
             <form @submit.prevent="registerInstance">
                 <label for="instance">
                     Instance URL

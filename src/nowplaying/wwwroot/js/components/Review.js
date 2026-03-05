@@ -2,7 +2,11 @@ export default {
     template: `
         <div>
             <article>
-                <header><strong>Review History</strong></header>
+                <hgroup>
+                    <h2>Review History</h2>
+                    <p>Search your #nowplaying posts by date range. A composite image of all album covers posted in that range will be generated.</p>
+                    <p>Alt-text will be naively generated from the first line of the original posts. You can edit it and the post text before sharing to Mastodon.</p>
+                </hgroup>
                 <div class="grid">
                     <label>
                         Start Date
@@ -13,7 +17,7 @@ export default {
                         <input type="date" v-model="until">
                     </label>
                 </div>
-                <button @click="search" :aria-busy="searching" :disabled="searching || generating">
+                <button class="btn-primary" @click="search" :aria-busy="searching" :disabled="searching || generating">
                     {{ searching ? 'Searching...' : 'Search #nowplaying' }}
                 </button>
                 <p v-if="error" class="message-error">{{ error }}</p>
@@ -25,7 +29,7 @@ export default {
             </article>
             
             <article v-if="posts.length > 0 && !generating && !compositeUrl">
-                <header>Found {{ posts.length }} albums.</header>
+                <h3>Found {{ posts.length }} albums.</h3>
             </article>
 
             <article v-else-if="searched && posts.length === 0">
@@ -33,14 +37,13 @@ export default {
             </article>
 
             <article v-if="compositeUrl">
-                <header><strong>Composite Image</strong></header>
+                <h2>Composite Image</h2>
                 <figure class="text-center">
                     <img :src="compositeUrl" class="composite-image">
                 </figure>
 
-                <div class="share-actions">
-                    <button @click="toggleShareForm" class="w-100">Share to Mastodon</button>
-                    <a :href="compositeUrl" download="nowplaying_composite.jpg" role="button" class="secondary outline w-100">Download Image</a>
+                <div>
+                    <button @click="toggleShareForm">Share to Mastodon</button>
                 </div>
 
                 <details v-if="posts.length > 0">
@@ -54,7 +57,7 @@ export default {
 
                 <!-- Share Form -->
                 <article v-if="showShareForm" data-share-form>
-                    <header><strong>Share to Mastodon</strong></header>
+                    <h3>Share to Mastodon</h3>
                     
                     <label>
                         Image Alt Text <span :class="['char-count', { 'over-limit': altTextCharCount > 1500 }]">{{ altTextCharCount }}/1500</span>
@@ -97,7 +100,7 @@ export default {
         return {
             since: start.toISOString().split('T')[0],
             until: end.toISOString().split('T')[0],
-            searchLoading: false,
+            searching: false,
             generating: false,
             error: null,
             posts: [],

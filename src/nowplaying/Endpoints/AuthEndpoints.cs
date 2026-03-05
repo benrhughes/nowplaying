@@ -1,5 +1,9 @@
 namespace NowPlaying.Endpoints;
 
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using NowPlaying.Extensions;
 using NowPlaying.Models;
 using NowPlaying.Services;
 
@@ -13,15 +17,13 @@ public static class AuthenticationEndpoints
     /// </summary>
     /// <param name="context">The HTTP context.</param>
     /// <param name="instance">The optional instance URL.</param>
-    /// <param name="clientId">The optional client ID.</param>
-    /// <param name="config">The app configuration.</param>
+    /// <param name="registrationStore">The registration store.</param>
     /// <returns>A redirect to the OAuth authorize URL.</returns>
-    public static IResult Login(HttpContext context, string? instance, string? clientId, AppConfig config)
+    public static IResult Login(HttpContext context, string? instance, IRegistrationStore registrationStore)
     {
         instance ??= context.Session.GetString("instance");
-        clientId ??= context.Session.GetString("clientId");
 
-        if (string.IsNullOrEmpty(instance) || string.IsNullOrEmpty(clientId))
+        if (string.IsNullOrEmpty(instance))
         {
             return Results.BadRequest(new ErrorResponse("Instance not configured. Please select an instance first."));
         }
@@ -29,9 +31,17 @@ public static class AuthenticationEndpoints
         // Ensure no trailing slashes in instance URL
         instance = instance.TrimEnd('/');
 
+        if (!registrationStore.TryGet(instance, out var info) || info == null)
+        {
+            return Results.BadRequest(new ErrorResponse("Instance not registered. Please register your instance first."));
+        }
+
+        var clientId = info.ClientId;
+        var redirectUri = info.RedirectUri;
+
         var authUrl = $"{instance}/oauth/authorize?" +
                       $"client_id={Uri.EscapeDataString(clientId)}" +
-                      $"&redirect_uri={Uri.EscapeDataString(config.RedirectUri)}" +
+                      $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
                       $"&response_type=code" +
                       $"&scope={Uri.EscapeDataString(AppConfig.OAuthScopes)}";
 
@@ -44,15 +54,15 @@ public static class AuthenticationEndpoints
     /// <param name="context">The HTTP context.</param>
     /// <param name="code">The authorization code.</param>
     /// <param name="mastodonService">The Mastodon service.</param>
-    /// <param name="config">The app configuration.</param>
     /// <param name="loggerFactory">The logger factory.</param>
+    /// <param name="registrationStore">The registration store.</param>
     /// <returns>A redirect to the homepage.</returns>
     public static async Task<IResult> Callback(
         HttpContext context,
         string? code,
         IMastodonService mastodonService,
-        AppConfig config,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory,
+        IRegistrationStore registrationStore)
     {
         if (string.IsNullOrEmpty(code))
         {
@@ -60,18 +70,36 @@ public static class AuthenticationEndpoints
         }
 
         var instance = context.Session.GetString("instance");
-        var clientId = context.Session.GetString("clientId");
-        var clientSecret = context.Session.GetString("clientSecret");
 
-        if (string.IsNullOrEmpty(instance) || string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
+        if (string.IsNullOrEmpty(instance))
         {
             return Results.BadRequest(new ErrorResponse("Session invalid. Please start the login process again."));
         }
 
+        if (!registrationStore.TryGet(instance, out var reg) || reg == null)
+        {
+            return Results.BadRequest(new ErrorResponse("Registration info missing. Please register the instance again."));
+        }
+
+        var clientId = reg.ClientId;
+        var clientSecret = reg.ClientSecret;
+        var redirectUri = reg.RedirectUri ?? "http://localhost:4444/auth/callback";
+
         try
         {
-            var accessToken = await mastodonService.GetAccessTokenAsync(instance, clientId, clientSecret, code, config.RedirectUri);
-            context.Session.SetString("accessToken", accessToken?.Trim() ?? string.Empty);
+            var accessToken = await mastodonService.GetAccessTokenAsync(instance, clientId, clientSecret, code, redirectUri);
+
+            // Create claims for the authenticated user
+            var claims = ClaimsExtensions.CreateAuthenticationClaims(instance, accessToken?.Trim() ?? string.Empty);
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            // Sign in the user with cookie authentication
+            await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24)
+            });
 
             return Results.Redirect("/");
         }
@@ -90,12 +118,13 @@ public static class AuthenticationEndpoints
     }
 
     /// <summary>
-    /// Logs the user out by clearing the session.
+    /// Logs the user out by clearing authentication and session.
     /// </summary>
     /// <param name="context">The HTTP context.</param>
     /// <returns>A redirect to the homepage.</returns>
-    public static IResult Logout(HttpContext context)
+    public static async Task<IResult> Logout(HttpContext context)
     {
+        await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         context.Session.Clear();
         return Results.Redirect("/");
     }

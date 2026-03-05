@@ -1,128 +1,33 @@
-/* Custom styles to enhance Pico.css */
+/* Minimal custom styles (prefer Pico defaults) */
 
 :root {
-  /* Theme Colors - Purple Brand */
-  --primary: #667eea;
-  --primary-hover: #5568d3;
-  --primary-focus: rgba(102, 126, 234, 0.125);
-  --primary-inverse: #fff;
-  
-  /* Layout */
-  --card-background-color: #fff;
-  --border-radius: 8px;
-  --spacing: 1rem;
+  --border-radius: 0rem;
+  --typography-spacing-vertical: 0.6rem;
 }
 
-/* Dark Mode Overrides */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --card-background-color: #1a1a1a;
-  }
-  .app-header h1 {
-    --color: #fff;
-  }
-}
-
-/* Header styling */
-.app-header {
-  background: var(--card-background-color);
-  padding: 1rem 2rem;
-  border-radius: var(--border-radius);
-  margin-bottom: var(--block-spacing-vertical);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.header-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.app-header h1 {
-  margin-bottom: 0;
-  font-size: 1.5rem;
-  --color: #333;
-}
-
-#auth-status {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.instance-link {
-  color: var(--primary);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-/* Custom Tabs */
-.tabs {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0; /* spacing handled by .tabs-wrapper */
-}
-
-.tab-link {
-  padding: 0.5rem 1rem;
-  text-decoration: none;
-  color: var(--muted-color);
-  border-bottom: 3px solid transparent;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.tab-link:hover {
-  color: var(--primary);
-  text-decoration: none;
-}
-
-.tab-link.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-}
-
-/* Utility Classes */
 .text-center { text-align: center; }
-.w-100 { width: 100%; }
+/* removed custom .w-100 utility to prefer Pico defaults */
 
-/* Feedback messages */
 .message-error { color: var(--del-color); }
 .message-success { color: var(--ins-color); }
 
-/* Character count indicator - default muted, turns red when over limit */
 .char-count { color: var(--muted-color); }
 .char-count.over-limit { color: var(--del-color); }
 
-/* Tabs divider */
-.tabs-wrapper {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--muted-border-color);
-}
-
-/* Styles for preview images */
 figure img {
   border-radius: var(--border-radius);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Composite image in review */
-.composite-image {
-  border: 1px solid var(--muted-border-color);
+.composite-image { border: 1px solid var(--muted-border-color); }
+
+.preview-text { white-space: pre-wrap; }
+
+/* Make active nav links more visible using Pico's focus color */
+nav a[aria-current="page"] {
+  border-bottom: 1px solid;
 }
 
-/* Share / download action buttons */
-.share-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: var(--block-spacing-vertical);
-}
-
-/* Preserve newlines in text previews */
-.preview-text {
-  white-space: pre-wrap;
+select {
+  border: 0px;
 }

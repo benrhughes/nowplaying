@@ -1,30 +1,12 @@
 export default {
     template: `
         <div>
-            <!-- Instance Selection (if not registered) -->
-            <article v-if="!registered">
-                <header><strong>Welcome to NowPlaying</strong></header>
-                <p>Please enter your Mastodon instance URL to get started.</p>
-                <form @submit.prevent="registerInstance">
-                    <label>
-                        Mastodon Instance
-                        <input v-model="instanceUrl" type="url" placeholder="https://mastodon.social" required>
-                    </label>
-                    <button type="submit" :aria-busy="loading" :disabled="loading">Connect</button>
-                </form>
-                <p v-if="error" class="message-error">{{ error }}</p>
-            </article>
-
-            <!-- Login Prompt (if not authenticated) -->
-            <article v-else-if="!authenticated">
-                <header><strong>Connect to Mastodon</strong></header>
-                <p>You need to authorize this app to post to your account.</p>
-                <a href="/auth/login" role="button" class="w-100">Login with Mastodon</a>
-            </article>
-
             <!-- Scrape Form -->
-            <article v-else-if="!scrapedData">
-                <header><strong>Post an Album</strong></header>
+            <article v-if="!scrapedData">
+                <hgroup>
+                    <h2>Post a Bandcamp Album</h2>
+                    <p>Enter the URL of a Bandcamp album to fetch its details. You can review and change the post before sharing to Mastodon</p>
+                </hgroup>
                 <form @submit.prevent="scrape">
                     <label>
                         Bandcamp URL
@@ -39,7 +21,7 @@ export default {
 
             <!-- Preview & Post -->
             <article v-else>
-                <header><strong>Preview Post</strong></header>
+                <h2>Preview Post</h2>
                 
                 <label>
                     Artist
@@ -68,10 +50,10 @@ export default {
                     </figcaption>
                 </figure>
 
-                <footer>
-                    <button @click="post" :aria-busy="loading" :disabled="loading">Post to Mastodon</button>
-                    <button @click="reset" class="secondary outline">Back</button>
-                </footer>
+                    <footer>
+                        <button @click="post" :aria-busy="loading" :disabled="loading">Post to Mastodon</button>
+                        <button @click="reset" class="secondary outline">Back</button>
+                    </footer>
                 
                 <p v-if="error" class="message-error">{{ error }}</p>
                 <p v-if="success" class="message-success" v-html="success"></p>
@@ -81,7 +63,6 @@ export default {
     props: ['authenticated', 'registered'],
     data() {
         return {
-            instanceUrl: '',
             url: '',
             loading: false,
             error: null,
@@ -92,24 +73,6 @@ export default {
         }
     },
     methods: {
-        async registerInstance() {
-            this.loading = true;
-            this.error = null;
-            try {
-                const res = await fetch('/api/config/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ instance: this.instanceUrl })
-                });
-                if (!res.ok) throw new Error((await res.json()).error);
-                // Trigger parent update or reload
-                window.location.reload(); 
-            } catch (e) {
-                this.error = e.message;
-            } finally {
-                this.loading = false;
-            }
-        },
         async scrape() {
             this.loading = true;
             this.error = null;

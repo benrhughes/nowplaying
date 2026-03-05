@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;
 using NowPlaying.Extensions;
 using NowPlaying.Models;
@@ -18,6 +19,17 @@ if (!Validator.TryValidateObject(config, new ValidationContext(config), validati
 
 // Services
 builder.Services.AddSingleton(config);
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/auth/login";
+        options.LogoutPath = "/auth/logout";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
+        options.Cookie.SecurePolicy = builder.Environment.IsProduction() ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
+        options.ExpireTimeSpan = TimeSpan.FromHours(24);
+    });
+builder.Services.AddAuthorization();
 builder.Services.AddServices(config, builder.Environment);
 
 builder.Services.Configure<FormOptions>(options =>
@@ -37,6 +49,8 @@ app.Use(async (context, next) =>
 });
 
 app.UseSession();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseStaticFiles();
 
 app.MapEndpoints();

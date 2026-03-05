@@ -62,3 +62,27 @@ public class CompositeRequest
     /// </summary>
     public List<string> ImageUrls { get; set; } = new ();
 }
+
+/// <summary>
+/// Request model for posting a composite image via multipart/form-data.
+/// </summary>
+public class PostCompositeRequest
+{
+    /// <summary>
+    /// Gets or sets the uploaded image file.
+    /// </summary>
+    [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Image is required")]
+    public Microsoft.AspNetCore.Http.IFormFile Image { get; set; } = default!;
+
+    /// <summary>
+    /// Gets or sets the alternative text for the image.
+    /// </summary>
+    [System.ComponentModel.DataAnnotations.MaxLength(1500, ErrorMessage = "Alt text exceeds 1500 characters")]
+    public string? AltText { get; set; }
+
+    /// <summary>
+    /// Gets or sets the post text to publish to Mastodon.
+    /// </summary>
+    [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Post text is required")]
+    public string Text { get; set; } = string.Empty;
+}

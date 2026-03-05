@@ -56,7 +56,7 @@ describe('Review Component', () => {
     wrapper.vm.until = '2025-01-31';
     await wrapper.vm.search();
 
-    const expectedUrl = '/api/review/search?since=2025-01-01&until=2025-01-31';
+    const expectedUrl = '/api/history/search?since=2025-01-01&until=2025-01-31';
     expect(global.fetch).toHaveBeenCalledWith(expectedUrl);
     expect(wrapper.vm.posts).toHaveLength(2);
     expect(wrapper.vm.searched).toBe(true);
@@ -91,7 +91,7 @@ describe('Review Component', () => {
 
   it('hides spinner on search button when composite is generating', async () => {
     wrapper = mount(Review);
-    wrapper.vm.loading = false;
+    wrapper.vm.searching = false;
     wrapper.vm.generating = true;
     await wrapper.vm.$nextTick();
 
@@ -154,7 +154,7 @@ describe('Review Component', () => {
     await wrapper.vm.generateComposite();
 
     expect(global.fetch).toHaveBeenCalledWith(
-      '/api/review/composite',
+      '/api/history/composite',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -177,13 +177,16 @@ describe('Review Component', () => {
     });
 
     wrapper = mount(Review);
-    wrapper.vm.posts = [{ postId: '1', imageUrl: 'https://example.com/image1.jpg', description: 'Album 1' }];
+    wrapper.vm.posts = [{ postId: '1', imageUrl: 'https://example.com/image1.jpg', altText: 'Album 1', description: 'Album 1' }];
 
     await wrapper.vm.generateComposite();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain('Composite Image');
-    expect(wrapper.find('a[download]').exists()).toBe(true);
+    expect(wrapper.find('img.composite-image').exists()).toBe(true);
+    const shareButtons = wrapper.findAll('button');
+    const shareButton = shareButtons.find(btn => btn.text().includes('Share to Mastodon'));
+    expect(shareButton).toBeDefined();
   });
 
   it('handles composite generation error', async () => {
@@ -203,20 +206,22 @@ describe('Review Component', () => {
   it('disables buttons while loading', async () => {
     wrapper = mount(Review);
 
-    wrapper.vm.loading = true;
+    wrapper.vm.searching = true;
     await wrapper.vm.$nextTick();
 
     expect(wrapper.find('button:not([disabled])').exists()).toBe(false);
   });
 
-  it('allows downloading composite image', async () => {
+  it('shows share button when composite is ready', async () => {
     wrapper = mount(Review);
     wrapper.vm.compositeUrl = 'blob:http://localhost/123';
+    wrapper.vm.posts = [{ postId: '1', imageUrl: 'https://example.com/image1.jpg', altText: 'Album 1' }];
 
     await wrapper.vm.$nextTick();
 
-    const downloadLink = wrapper.find('a[download]');
-    expect(downloadLink.exists()).toBe(true);
-    expect(downloadLink.attributes('download')).toBe('nowplaying_composite.jpg');
+    expect(wrapper.find('img.composite-image').exists()).toBe(true);
+    const shareButtons = wrapper.findAll('button');
+    const shareButton = shareButtons.find(btn => btn.text().includes('Share to Mastodon'));
+    expect(shareButton).toBeDefined();
   });
 });

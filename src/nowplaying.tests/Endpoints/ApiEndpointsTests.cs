@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using NowPlaying.Endpoints;
+using NowPlaying.Extensions;
 using NowPlaying.Models;
 using NowPlaying.Services;
 using Microsoft.AspNetCore.Http;
@@ -37,6 +39,14 @@ public class PostingEndpointsTests
         };
 
         _httpContextMock.Setup(h => h.Session).Returns(_sessionMock.Object);
+    }
+
+    private void SetupAuthenticatedUser(string instance, string accessToken)
+    {
+        var claims = ClaimsExtensions.CreateAuthenticationClaims(instance, accessToken);
+        var identity = new ClaimsIdentity(claims, "test");
+        var principal = new ClaimsPrincipal(identity);
+        _httpContextMock.Setup(h => h.User).Returns(principal);
     }
 
     [Fact]
@@ -111,10 +121,7 @@ public class PostingEndpointsTests
         // Arrange
         var request = new PostRequest { Text = "Check this out!", ImageUrl = "https://example.com/image.jpg" };
         
-        var instanceBytes = System.Text.Encoding.UTF8.GetBytes("https://mastodon.social");
-        var tokenBytes = System.Text.Encoding.UTF8.GetBytes("test-token");
-        _sessionMock.Setup(s => s.TryGetValue("instance", out instanceBytes)).Returns(true);
-        _sessionMock.Setup(s => s.TryGetValue("accessToken", out tokenBytes)).Returns(true);
+        SetupAuthenticatedUser("https://mastodon.social", "test-token");
 
         _imageServiceMock.Setup(i => i.DownloadImageAsync(request.ImageUrl))
             .ReturnsAsync(new byte[] { 0x89, 0x50, 0x4E, 0x47 });

@@ -64,10 +64,10 @@ public static class PostingEndpoints
         IImageService imageService,
         ILoggerFactory loggerFactory)
     {
-        var accessToken = context.Session.GetString("accessToken");
-        var instance = context.Session.GetString("instance");
+        var instance = context.User.GetInstance();
+        var accessToken = context.User.GetAccessToken();
 
-        if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(instance))
+        if (string.IsNullOrEmpty(instance) || string.IsNullOrEmpty(accessToken))
         {
             return Results.Unauthorized();
         }

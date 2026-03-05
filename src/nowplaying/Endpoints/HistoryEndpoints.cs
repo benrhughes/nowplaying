@@ -23,8 +23,8 @@ public static class HistoryEndpoints
         DateTime until,
         IMastodonService mastodonService)
     {
-        var instance = context.Session.GetString("instance");
-        var accessToken = context.Session.GetString("accessToken");
+        var instance = context.User.GetInstance();
+        var accessToken = context.User.GetAccessToken();
 
         if (string.IsNullOrEmpty(instance) || string.IsNullOrEmpty(accessToken))
         {
@@ -93,14 +93,16 @@ public static class HistoryEndpoints
     /// Posts a composite image to Mastodon.
     /// </summary>
     /// <param name="context">The HTTP context.</param>
+    /// <param name="request">The post composite request bound from the form.</param>
     /// <param name="mastodonService">The Mastodon service.</param>
     /// <returns>The status URL.</returns>
     public static async Task<IResult> PostComposite(
         HttpContext context,
+        [Microsoft.AspNetCore.Mvc.FromForm] PostCompositeRequest request,
         IMastodonService mastodonService)
     {
-        var instance = context.Session.GetString("instance");
-        var accessToken = context.Session.GetString("accessToken");
+        var instance = context.User.GetInstance();
+        var accessToken = context.User.GetAccessToken();
 
         if (string.IsNullOrEmpty(instance) || string.IsNullOrEmpty(accessToken))
         {
@@ -109,12 +111,12 @@ public static class HistoryEndpoints
 
         try
         {
-            var form = await context.Request.ReadFormAsync();
-            var imageFile = form.Files.GetFile("image");
-            var altText = form["altText"].ToString();
-            var text = form["text"].ToString();
+            var image = request.Image;
+            var altText = request.AltText;
+            var text = request.Text;
 
-            if (imageFile == null || imageFile.Length == 0)
+            // Guard checks (also covered by ValidationFilter when used in the pipeline)
+            if (image == null || image.Length == 0)
             {
                 return Results.BadRequest(new ErrorResponse("No image provided"));
             }
@@ -124,8 +126,8 @@ public static class HistoryEndpoints
                 return Results.BadRequest(new ErrorResponse("No post text provided"));
             }
 
-            // Read image file to byte array
-            using (var stream = imageFile.OpenReadStream())
+            // Read the file stream now
+            using (var stream = image.OpenReadStream())
             {
                 using (var memoryStream = new MemoryStream())
                 {
