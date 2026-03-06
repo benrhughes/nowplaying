@@ -32,20 +32,5 @@ dotnet test /p:CollectCoverage=true
 
 ## 📝 Coding Standards
 
-- **Style**: Follow standard C# conventions. Treat warnings as errors.
-- **HTTP Clients**: Use Typed Clients (`services.AddHttpClient<T>`).
-- **DI**: Use Primary Constructors where possible.
+- **Style**: Follow standard C# conventions. Stylecop is enabled and rules should not be ignored.
 - **Frontend**: Vue.js 3 using ES Modules (no webpack/vite build step required).
-
-##  API Reference
-
-### Auth
-- `GET /auth/login`: Initiates OAuth.
-- `GET /auth/callback`: OAuth callback handler.
-
-### Posting
-- `POST /api/posting/scrape`: Scrapes OpenGraph data from a URL.
-- `POST /api/posting/post`: Uploads media and posts status to Mastodon.
-
-### History
-- `GET /api/history/search`: Returns recent posts.
