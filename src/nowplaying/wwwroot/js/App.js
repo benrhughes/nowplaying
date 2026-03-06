@@ -23,13 +23,6 @@ export default {
                     <li>
                         <a v-if="authenticated" href="/auth/logout">Log out</a>
                     </li>
-                    <li>
-                        <select id="theme-select" v-model="theme" @change="setTheme(theme)">
-                            <option value="auto">System</option>
-                            <option value="light">Light</option>
-                            <option value="dark">Dark</option>
-                        </select>
-                    </li>
                 </ul>
             </nav>
             <nav>
@@ -60,6 +53,25 @@ export default {
                     @unauthorized="handleUnauthorized"
                 />
             </keep-alive>
+            <footer>
+            <nav>
+                <ul>
+                    <li>
+                        <small>
+                            <a href="https://github.com/benrhughes/nowplaying" target="_blank">View on GitHub</a>
+                        </small>
+                    </li>
+                </ul>
+                <ul>
+                    <li>
+                        <select id="theme-select" v-model="theme" @change="setTheme(theme)">
+                            <option value="auto">System</option>
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </li>
+            </nav>
+            </footer>
         </main>
     `,
     data() {

@@ -8,7 +8,7 @@ export default {
             <article v-if="!showPostForm">
                 <hgroup>
                     <h2>Review History</h2>
-                    <p>Search your #nowplaying posts by date range. A composite image of all album covers posted in that range will be generated.</p>
+                    <p>Search your posts by tag and date range. A composite image of all album covers posted in that range will be generated.</p>
                 </hgroup>
                 <div class="grid">
                     <label>
@@ -19,9 +19,13 @@ export default {
                         End Date
                         <input type="date" v-model="until">
                     </label>
+                    <label>
+                        Tag
+                        <input type="text" v-model="tag">
+                    </label>
                 </div>
                 <button class="btn-primary" @click="search" :aria-busy="searching" :disabled="searching || generating">
-                    {{ searching ? 'Searching...' : 'Search #nowplaying' }}
+                    {{ searching ? 'Searching...' : 'Search ' + tag }}
                 </button>
                 <p v-if="error" class="message-error">{{ error }}</p>
 
@@ -79,6 +83,7 @@ export default {
         return {
             since: start.toISOString().split('T')[0],
             until: end.toISOString().split('T')[0],
+            tag: '#nowplaying',
             searching: false,
             generating: false,
             error: null,
@@ -91,7 +96,7 @@ export default {
     },
     computed: {
         postText() {
-            return `#nowplaying Review: ${this.since} to ${this.until}`;
+            return `${this.tag} Review: ${this.since} to ${this.until}`;
         },
         altText() {
             return this.posts.map((p, i) => `${i + 1}. ${p.altText}`).join('\n');
@@ -106,7 +111,8 @@ export default {
             this.searched = false;
             
             try {
-                const res = await fetch(`/api/history/search?since=${this.since}&until=${this.until}`);
+                const encodedTag = encodeURIComponent(this.tag);
+                const res = await fetch(`/api/history/search?since=${this.since}&until=${this.until}&tag=${encodedTag}`);
                 if (!res.ok) {
                     if (res.status === 401) {
                         this.$emit('unauthorized');

@@ -1,5 +1,6 @@
 namespace NowPlaying.Endpoints;
 
+using Microsoft.AspNetCore.Mvc;
 using NowPlaying.Extensions;
 using NowPlaying.Models;
 using NowPlaying.Services;
@@ -31,7 +32,8 @@ public class HistoryEndpoints(
         try
         {
             var userId = await mastodonService.VerifyCredentialsAsync(instance, accessToken);
-            var posts = await mastodonService.GetTaggedPostsAsync(instance, accessToken, userId, "nowplaying", request.Since!.Value, request.Until!.Value);
+            var tag = request.Tag.TrimStart('#');
+            var posts = await mastodonService.GetTaggedPostsAsync(instance, accessToken, userId, tag, request.Since!.Value, request.Until!.Value);
 
             var images = posts
                 .Where(p => p.MediaAttachments != null && p.MediaAttachments.Count > 0)
@@ -96,7 +98,7 @@ public class HistoryEndpoints(
     /// <returns>The status URL.</returns>
     public async Task<IResult> PostComposite(
         HttpContext context,
-        [Microsoft.AspNetCore.Mvc.FromForm] PostCompositeRequest request)
+        [FromForm] PostCompositeRequest request)
     {
         var instance = context.User.GetInstance() ?? throw new UnauthorizedAccessException();
         var accessToken = context.User.GetAccessToken() ?? throw new UnauthorizedAccessException();

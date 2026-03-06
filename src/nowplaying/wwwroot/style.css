@@ -3,6 +3,7 @@
 :root {
   --border-radius: 0rem;
   --typography-spacing-vertical: 0.6rem;
+  --nav-element-spacing-vertical: 0.4rem;
 }
 
 .text-center { text-align: center; }

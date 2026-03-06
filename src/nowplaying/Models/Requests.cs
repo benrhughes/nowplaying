@@ -103,4 +103,10 @@ public class HistorySearchRequest
     /// </summary>
     [Required(ErrorMessage = "Until date is required")]
     public DateTime? Until { get; set; }
+
+    /// <summary>
+    /// Gets or sets the tag to search for.
+    /// </summary>
+    [Required(ErrorMessage = "Tag is required")]
+    public required string Tag { get; set; }
 }

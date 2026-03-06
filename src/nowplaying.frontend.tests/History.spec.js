@@ -10,6 +10,7 @@ describe('History Component', () => {
     if (!global.URL) global.URL = {};
     global.URL.createObjectURL = vi.fn(() => 'blob:url');
     global.URL.revokeObjectURL = vi.fn();
+    Element.prototype.scrollIntoView = vi.fn();
   });
 
   it('renders search form by default', () => {
@@ -33,7 +34,7 @@ describe('History Component', () => {
     await wrapper.vm.search();
 
     expect(global.fetch).toHaveBeenCalledWith(
-        '/api/history/search?since=2025-01-01&until=2025-01-07'
+        '/api/history/search?since=2025-01-01&until=2025-01-07&tag=%23nowplaying'
     );
     expect(wrapper.vm.posts).toHaveLength(1);
   });

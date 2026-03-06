@@ -64,7 +64,7 @@ public class HistoryEndpointsTests
     public async Task Search_ReturnsUnauthorized_WhenNoSession()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now, Until = DateTime.Now }));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now, Until = DateTime.Now, Tag = "nowplaying" }));
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class HistoryEndpointsTests
             .ReturnsAsync(posts);
 
         // Act
-        var result = await CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now.AddDays(-1), Until = DateTime.Now });
+        var result = await CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now.AddDays(-1), Until = DateTime.Now, Tag = "nowplaying" });
 
         // Assert
         // We use IValueHttpResult because we can't easily assert the generic type of Ok<List<AnonymousType>>
@@ -294,6 +294,6 @@ public class HistoryEndpointsTests
             .ThrowsAsync(new HttpRequestException("Unauthorized", null, System.Net.HttpStatusCode.Unauthorized));
 
         // Act & Assert
-        await Assert.ThrowsAsync<HttpRequestException>(() => CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now.AddDays(-1), Until = DateTime.Now }));
+        await Assert.ThrowsAsync<HttpRequestException>(() => CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now.AddDays(-1), Until = DateTime.Now, Tag = "#nowplaying" }));
     }
 }
