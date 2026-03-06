@@ -18,7 +18,7 @@ public class AuthenticationEndpointsTests
     private readonly Mock<ISession> _sessionMock;
     private readonly Mock<Microsoft.AspNetCore.Authentication.IAuthenticationService> _authServiceMock;
     private readonly Mock<IRegistrationStore> _registrationStoreMock;
-    private readonly Mock<ILoggerFactory> _loggerFactoryMock;
+    private readonly Mock<ILogger<AuthenticationEndpoints>> _loggerMock;
     private readonly AppConfig _config;
 
     public AuthenticationEndpointsTests()
@@ -28,9 +28,7 @@ public class AuthenticationEndpointsTests
         _sessionMock = new Mock<ISession>();
         _authServiceMock = new Mock<Microsoft.AspNetCore.Authentication.IAuthenticationService>();
         _registrationStoreMock = new Mock<IRegistrationStore>();
-        _loggerFactoryMock = new Mock<ILoggerFactory>();
-        _loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>()))
-            .Returns(new Mock<ILogger>().Object);
+        _loggerMock = new Mock<ILogger<AuthenticationEndpoints>>();
 
         _httpContextMock.SetupGet(h => h.Session).Returns(() => _sessionMock.Object);
 
@@ -46,6 +44,8 @@ public class AuthenticationEndpointsTests
             SessionSecret = "test-secret"
         };
     }
+
+    private AuthenticationEndpoints CreateEndpoints() => new(_mastodonServiceMock.Object, _loggerMock.Object, _registrationStoreMock.Object, _config);
 
     private void SetupSessionString(string key, string value)
     {
@@ -67,7 +67,7 @@ public class AuthenticationEndpointsTests
             .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", "client-secret", "http://localhost:3000/auth/callback"); return true; });
 
         // Act
-        var result = AuthenticationEndpoints.Login(_httpContextMock.Object, "https://mastodon.social", _registrationStoreMock.Object);
+        var result = CreateEndpoints().Login(_httpContextMock.Object, "https://mastodon.social");
 
         // Assert
         Assert.NotNull(result);
@@ -82,7 +82,7 @@ public class AuthenticationEndpointsTests
             .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", "client-secret", "http://localhost:3000/auth/callback"); return true; });
 
         // Act
-        var result = AuthenticationEndpoints.Login(_httpContextMock.Object, "https://mastodon.social", _registrationStoreMock.Object);
+        var result = CreateEndpoints().Login(_httpContextMock.Object, "https://mastodon.social");
 
         // Assert
         Assert.NotNull(result);
@@ -92,7 +92,7 @@ public class AuthenticationEndpointsTests
     public void Login_WithMissingInstance_ReturnsResult()
     {
         // Act
-        var result = AuthenticationEndpoints.Login(_httpContextMock.Object, null, _registrationStoreMock.Object);
+        var result = CreateEndpoints().Login(_httpContextMock.Object, null);
 
         // Assert
         Assert.NotNull(result);
@@ -108,7 +108,7 @@ public class AuthenticationEndpointsTests
             .Returns(false);
 
         // Act
-        var result = AuthenticationEndpoints.Login(_httpContextMock.Object, "https://mastodon.social", _registrationStoreMock.Object);
+        var result = CreateEndpoints().Login(_httpContextMock.Object, "https://mastodon.social");
 
         // Assert
         Assert.NotNull(result);
@@ -130,7 +130,7 @@ public class AuthenticationEndpointsTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await AuthenticationEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object, _registrationStoreMock.Object);
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code");
 
         // Assert
         Assert.NotNull(result);
@@ -140,7 +140,7 @@ public class AuthenticationEndpointsTests
     public async Task Callback_WithNullCode_ReturnsResult()
     {
         // Arrange & Act
-        var result = await AuthenticationEndpoints.Callback(_httpContextMock.Object, null, _mastodonServiceMock.Object, _loggerFactoryMock.Object, _registrationStoreMock.Object);
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, null);
 
         // Assert
         Assert.NotNull(result);
@@ -150,7 +150,7 @@ public class AuthenticationEndpointsTests
     public async Task Callback_WithMissingInstance_ReturnsResult()
     {
         // Arrange & Act
-        var result = await AuthenticationEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object, _registrationStoreMock.Object);
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code");
 
         // Assert
         Assert.NotNull(result);
@@ -166,7 +166,7 @@ public class AuthenticationEndpointsTests
             .Returns(false);
 
         // Act
-        var result = await AuthenticationEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object, _registrationStoreMock.Object);
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code");
 
         // Assert
         Assert.NotNull(result);
@@ -183,7 +183,7 @@ public class AuthenticationEndpointsTests
             .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", null!, "http://localhost:3000/auth/callback"); return true; });
 
         // Act
-        var result = await AuthenticationEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object, _registrationStoreMock.Object);
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code");
 
         // Assert
         Assert.NotNull(result);
@@ -202,7 +202,7 @@ public class AuthenticationEndpointsTests
             .ThrowsAsync(new HttpRequestException("Service error"));
 
         // Act
-        var result = await AuthenticationEndpoints.Callback(_httpContextMock.Object, "auth-code", _mastodonServiceMock.Object, _loggerFactoryMock.Object, _registrationStoreMock.Object);
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code");
 
         // Assert
         Assert.NotNull(result);
@@ -216,7 +216,7 @@ public class AuthenticationEndpointsTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await AuthenticationEndpoints.Logout(_httpContextMock.Object);
+        var result = await CreateEndpoints().Logout(_httpContextMock.Object);
 
         // Assert
         Assert.NotNull(result);

@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using Moq;
 using NowPlaying.Models;
 using NowPlaying.Services;
 using Xunit;
@@ -9,7 +11,8 @@ public class BandcampServiceTests
     private BandcampService CreateService(string? content, System.Net.HttpStatusCode statusCode = System.Net.HttpStatusCode.OK)
     {
         var httpClient = new HttpClient(new MockHttpMessageHandler(content, statusCode));
-        return new BandcampService(httpClient);
+        var logger = new Mock<ILogger<BandcampService>>();
+        return new BandcampService(httpClient, logger.Object);
     }
 
     [Fact]

@@ -8,35 +8,48 @@ namespace NowPlaying.Services;
 /// Service for scraping Bandcamp album information.
 /// </summary>
 /// <param name="httpClient">The HTTP client.</param>
-public class BandcampService(HttpClient httpClient)
+/// <param name="logger">The logger.</param>
+public class BandcampService(HttpClient httpClient, ILogger<BandcampService> logger)
     : IBandcampService
 {
     /// <inheritdoc/>
     public async Task<ScrapeResponse> ScrapeAsync(string url)
     {
-        var htmlContent = await httpClient.GetStringAsync(url);
+        logger.LogInformation("Scraping Bandcamp URL: {Url}", url);
 
-        var doc = new HtmlDocument();
-        doc.LoadHtml(htmlContent);
+        try
+        {
+            var htmlContent = await httpClient.GetStringAsync(url);
 
-        var titleNode = doc.DocumentNode.SelectSingleNode("//meta[@property='og:title']");
-        var imageNode = doc.DocumentNode.SelectSingleNode("//meta[@property='og:image']");
-        var descriptionNode = doc.DocumentNode.SelectSingleNode("//meta[@property='og:description']");
-        var titleTagNode = doc.DocumentNode.SelectSingleNode("//title");
+            var doc = new HtmlDocument();
+            doc.LoadHtml(htmlContent);
 
-        var title = titleNode?.GetAttributeValue("content", null) ?? titleTagNode?.InnerText ?? string.Empty;
-        var image = imageNode?.GetAttributeValue("content", null);
-        var description = descriptionNode?.GetAttributeValue("content", null) ?? string.Empty;
+            var titleNode = doc.DocumentNode.SelectSingleNode("//meta[@property='og:title']");
+            var imageNode = doc.DocumentNode.SelectSingleNode("//meta[@property='og:image']");
+            var descriptionNode = doc.DocumentNode.SelectSingleNode("//meta[@property='og:description']");
+            var titleTagNode = doc.DocumentNode.SelectSingleNode("//title");
 
-        var (artist, album) = ParseArtistAndAlbum(title);
+            var title = titleNode?.GetAttributeValue("content", null) ?? titleTagNode?.InnerText ?? string.Empty;
+            var image = imageNode?.GetAttributeValue("content", null);
+            var description = descriptionNode?.GetAttributeValue("content", null) ?? string.Empty;
 
-        return new ScrapeResponse(
-            Title: title,
-            Artist: artist,
-            Album: album,
-            Image: image,
-            Description: description,
-            Url: url);
+            var (artist, album) = ParseArtistAndAlbum(title);
+
+            logger.LogDebug("Scraped info - Artist: {Artist}, Album: {Album}", artist, album);
+
+            return new ScrapeResponse(
+                Title: title,
+                Artist: artist,
+                Album: album,
+                Image: image,
+                Description: description,
+                Url: url);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to scrape Bandcamp URL: {Url}", url);
+            throw;
+        }
     }
 
     private (string Artist, string Album) ParseArtistAndAlbum(string title)

@@ -27,7 +27,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.HttpOnly = true;
         options.Cookie.IsEssential = true;
         options.Cookie.SecurePolicy = builder.Environment.IsProduction() ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
-        options.ExpireTimeSpan = TimeSpan.FromHours(24);
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+        options.SlidingExpiration = true;
     });
 builder.Services.AddAuthorization();
 builder.Services.AddServices(config, builder.Environment);
@@ -51,6 +52,7 @@ app.Use(async (context, next) =>
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseExceptionHandler();
 app.UseStaticFiles();
 
 app.MapEndpoints();

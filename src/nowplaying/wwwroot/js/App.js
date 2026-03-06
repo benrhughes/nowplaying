@@ -1,9 +1,9 @@
-import Post from './components/Post.js';
-import Review from './components/Review.js';
+import Bandcamp from './components/Bandcamp.js';
+import History from './components/History.js';
 import InstanceSelection from './components/InstanceSelection.js';
 
 export default {
-    components: { Post, Review, InstanceSelection },
+    components: { Bandcamp, History, InstanceSelection },
     template: `
         <main class="container">
             <nav class="nav">
@@ -34,8 +34,8 @@ export default {
             </nav>
             <nav>
                 <ul>
-                    <li v-if="authenticated"><a href="#" @click.prevent="view = 'post'" :aria-current="view === 'post' ? 'page' : null">Post a Bandcamp Album</a></li>
-                    <li v-if="authenticated"><a href="#" @click.prevent="view = 'review'" :aria-current="view === 'review' ? 'page' : null">#NowPlaying History</a></li>
+                    <li v-if="authenticated"><a href="#" @click.prevent="view = 'bandcamp'" :aria-current="view === 'bandcamp' ? 'page' : null">Post a Bandcamp Album</a></li>
+                    <li v-if="authenticated"><a href="#" @click.prevent="view = 'history'" :aria-current="view === 'history' ? 'page' : null">#NowPlaying History</a></li>
                 </ul>
             </nav>
 
@@ -54,16 +54,17 @@ export default {
             </div>
             <keep-alive v-else>
                 <component :is="viewComponent" 
+                    ref="currentView"
                     :authenticated="authenticated" 
                     :registered="registered"
-                    @unauthorized="checkAuth"
+                    @unauthorized="handleUnauthorized"
                 />
             </keep-alive>
         </main>
     `,
     data() {
         return {
-            view: 'post',
+            view: 'bandcamp',
             authenticated: false,
             registered: false,
             instance: null,
@@ -72,8 +73,8 @@ export default {
     },
     computed: {
         viewComponent() {
-            if (this.view === 'review') return 'Review';
-            return 'Post';
+            if (this.view === 'history') return 'History';
+            return 'Bandcamp';
         },
         instanceName() {
             return this.instance ? this.instance.replace(/^https?:\/\//, '') : '';
@@ -84,30 +85,30 @@ export default {
         this.initTheme();
     },
     methods: {
-            initTheme() {
-                const key = 'picoPreferredColorScheme';
-                const stored = window.localStorage?.getItem(key) ?? 'auto';
-                this._themeKey = key;
-                this.setTheme(stored);
-            },
+        initTheme() {
+            const key = 'picoPreferredColorScheme';
+            const stored = window.localStorage?.getItem(key) ?? 'auto';
+            this._themeKey = key;
+            this.setTheme(stored);
+        },
 
-            setTheme(scheme) {
-                // scheme: 'light' | 'dark' | 'auto'
-                this.theme = scheme;
-                if (scheme === 'auto') {
-                    // remove explicit attribute to follow system
-                    document.documentElement.removeAttribute('data-theme');
-                    // store as 'auto' so we can keep preference
-                    window.localStorage?.setItem(this._themeKey, 'auto');
-                } else {
-                    document.documentElement.setAttribute('data-theme', scheme);
-                    window.localStorage?.setItem(this._themeKey, scheme);
-                }
-            },
+        setTheme(scheme) {
+            // scheme: 'light' | 'dark' | 'auto'
+            this.theme = scheme;
+            if (scheme === 'auto') {
+                // remove explicit attribute to follow system
+                document.documentElement.removeAttribute('data-theme');
+                // store as 'auto' so we can keep preference
+                window.localStorage?.setItem(this._themeKey, 'auto');
+            } else {
+                document.documentElement.setAttribute('data-theme', scheme);
+                window.localStorage?.setItem(this._themeKey, scheme);
+            }
+        },
 
         async checkAuth() {
             try {
-                const res = await fetch('/api/config/status');
+                const res = await fetch('/auth/status');
                 const data = await res.json();
                 this.authenticated = data.authenticated;
                 this.registered = data.registered;
@@ -119,6 +120,9 @@ export default {
         handleInstanceRegistered(instance) {
             this.registered = true;
             this.instance = instance;
+        },
+        handleUnauthorized() {
+            window.location.href = '/auth/logout';
         }
     }
 }

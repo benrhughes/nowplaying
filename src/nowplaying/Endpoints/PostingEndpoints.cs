@@ -7,21 +7,25 @@ using NowPlaying.Services;
 /// <summary>
 /// Endpoints for posting albums to Mastodon.
 /// </summary>
-public static class PostingEndpoints
+/// <param name="bandcampService">The Bandcamp service.</param>
+/// <param name="mastodonService">The Mastodon service.</param>
+/// <param name="imageService">The image service.</param>
+/// <param name="logger">The logger.</param>
+public class PostingEndpoints(
+    IBandcampService bandcampService,
+    IMastodonService mastodonService,
+    IImageService imageService,
+    ILogger<PostingEndpoints> logger)
 {
     /// <summary>
     /// Scrapes album info from a Bandcamp URL.
     /// </summary>
     /// <param name="context">The HTTP context.</param>
     /// <param name="request">The scrape request.</param>
-    /// <param name="bandcampService">The Bandcamp service.</param>
-    /// <param name="loggerFactory">The logger factory.</param>
     /// <returns>The scrape response.</returns>
-    public static async Task<IResult> Scrape(
+    public async Task<IResult> Scrape(
         HttpContext context,
-        ScrapeRequest request,
-        IBandcampService bandcampService,
-        ILoggerFactory loggerFactory)
+        ScrapeRequest request)
     {
         var host = new Uri(request.Url).Host;
         if (!host.EndsWith(".bandcamp.com") && host != "bandcamp.com")
@@ -36,13 +40,11 @@ public static class PostingEndpoints
         }
         catch (HttpRequestException ex)
         {
-            var logger = loggerFactory.CreateLogger(nameof(PostingEndpoints));
             logger.LogWarning(ex, "Scrape failed for {url}: {message}", request.Url, ex.Message);
             return Results.BadRequest(new ErrorResponse($"Failed to scrape URL: {ex.Message}"));
         }
         catch (Exception ex)
         {
-            var logger = loggerFactory.CreateLogger(nameof(PostingEndpoints));
             logger.LogError(ex, "Scrape failed for {url}", request.Url);
             return Results.StatusCode(StatusCodes.Status500InternalServerError);
         }
@@ -53,24 +55,13 @@ public static class PostingEndpoints
     /// </summary>
     /// <param name="context">The HTTP context.</param>
     /// <param name="request">The post request.</param>
-    /// <param name="mastodonService">The Mastodon service.</param>
-    /// <param name="imageService">The image service.</param>
-    /// <param name="loggerFactory">The logger factory.</param>
     /// <returns>The post response.</returns>
-    public static async Task<IResult> Post(
+    public async Task<IResult> Post(
         HttpContext context,
-        PostRequest request,
-        IMastodonService mastodonService,
-        IImageService imageService,
-        ILoggerFactory loggerFactory)
+        PostRequest request)
     {
-        var instance = context.User.GetInstance();
-        var accessToken = context.User.GetAccessToken();
-
-        if (string.IsNullOrEmpty(instance) || string.IsNullOrEmpty(accessToken))
-        {
-            return Results.Unauthorized();
-        }
+        var instance = context.User.GetInstance() ?? throw new UnauthorizedAccessException();
+        var accessToken = context.User.GetAccessToken() ?? throw new UnauthorizedAccessException();
 
         try
         {
@@ -83,13 +74,11 @@ public static class PostingEndpoints
         }
         catch (HttpRequestException ex)
         {
-            var logger = loggerFactory.CreateLogger(nameof(PostingEndpoints));
             logger.LogWarning(ex, "Post failed due to network error: {message}", ex.Message);
-            return Results.BadRequest(new ErrorResponse($"Failed to post: {ex.Message}"));
+            throw;
         }
         catch (Exception ex)
         {
-            var logger = loggerFactory.CreateLogger(nameof(PostingEndpoints));
             logger.LogError(ex, "Post failed");
             return Results.StatusCode(StatusCodes.Status500InternalServerError);
         }

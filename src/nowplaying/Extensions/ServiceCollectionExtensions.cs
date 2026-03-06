@@ -1,5 +1,8 @@
 namespace NowPlaying.Extensions;
 
+using System.Security.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using NowPlaying.Authorization;
 using NowPlaying.Endpoints;
 using NowPlaying.Filters;
 using NowPlaying.Models;
@@ -45,6 +48,22 @@ public static class ServiceCollectionExtensions
         // In-memory registration store for app credentials per instance
         services.AddSingleton<IRegistrationStore, RegistrationStore>();
 
+        // Register authorization handler and policy for Mastodon token validation
+        services.AddSingleton<IAuthorizationHandler, MastodonAuthorizationHandler>();
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("MastodonValid", policy => policy.RequireAuthenticatedUser().AddRequirements(new MastodonRequirement()));
+        });
+
+        // Register global exception handler
+        services.AddExceptionHandler<Middleware.GlobalExceptionHandler>();
+        services.AddProblemDetails();
+
+        // Register endpoint classes for DI
+        services.AddScoped<AuthenticationEndpoints>();
+        services.AddScoped<PostingEndpoints>();
+        services.AddScoped<HistoryEndpoints>();
+
         return services;
     }
 
@@ -55,13 +74,14 @@ public static class ServiceCollectionExtensions
     /// <returns>The modified web application.</returns>
     public static WebApplication MapEndpoints(this WebApplication app)
     {
-        // Auth routes (not under /api since they handle OAuth redirects)
         var authGroup = app.MapGroup("/auth")
             .WithTags("Authentication");
 
-        authGroup.MapGet("/login", AuthenticationEndpoints.Login);
-        authGroup.MapGet("/callback", AuthenticationEndpoints.Callback);
-        authGroup.MapGet("/logout", (Delegate)AuthenticationEndpoints.Logout);
+        authGroup.MapGet("/login", (AuthenticationEndpoints e, HttpContext c, string? instance) => e.Login(c, instance));
+        authGroup.MapGet("/callback", (AuthenticationEndpoints e, HttpContext c, string? code) => e.Callback(c, code));
+        authGroup.MapGet("/logout", (AuthenticationEndpoints e, HttpContext c) => e.Logout(c));
+        authGroup.MapPost("/register", (AuthenticationEndpoints e, HttpContext c, RegisterRequest r) => e.Register(c, r));
+        authGroup.MapGet("/status", (AuthenticationEndpoints e, HttpContext c) => e.Status(c));
 
         var apiGroup = app.MapGroup("/api")
             .WithTags("API");
@@ -70,23 +90,22 @@ public static class ServiceCollectionExtensions
             .WithTags("Configuration")
             .AddEndpointFilter<ValidationFilter>();
 
-        configGroup.MapPost("/register", ConfigurationEndpoints.Register);
-        configGroup.MapGet("/status", ConfigurationEndpoints.Status);
-
         var postingGroup = apiGroup.MapGroup("/posting")
             .WithTags("Posting")
+            .RequireAuthorization("MastodonValid")
             .AddEndpointFilter<ValidationFilter>();
 
-        postingGroup.MapPost("/scrape", PostingEndpoints.Scrape);
-        postingGroup.MapPost("/post", PostingEndpoints.Post);
+        postingGroup.MapPost("/scrape", (PostingEndpoints e, HttpContext c, ScrapeRequest r) => e.Scrape(c, r));
+        postingGroup.MapPost("/post", (PostingEndpoints e, HttpContext c, PostRequest r) => e.Post(c, r));
 
         var historyGroup = apiGroup.MapGroup("/history")
             .WithTags("History")
+            .RequireAuthorization("MastodonValid")
             .AddEndpointFilter<ValidationFilter>();
 
-        historyGroup.MapGet("/search", HistoryEndpoints.Search);
-        historyGroup.MapPost("/composite", HistoryEndpoints.Composite);
-        historyGroup.MapPost("/post-composite", HistoryEndpoints.PostComposite);
+        historyGroup.MapGet("/search", (HistoryEndpoints e, HttpContext c, [AsParameters] HistorySearchRequest request) => e.Search(c, request));
+        historyGroup.MapPost("/composite", (HistoryEndpoints e, CompositeRequest r) => e.Composite(r));
+        historyGroup.MapPost("/post-composite", (HistoryEndpoints e, HttpContext c, [Microsoft.AspNetCore.Mvc.FromForm] PostCompositeRequest r) => e.PostComposite(c, r));
 
         // Serve index.html for root
         app.MapGet("/", context =>

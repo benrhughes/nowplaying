@@ -7,34 +7,31 @@ using NowPlaying.Services;
 /// <summary>
 /// Endpoints for reviewing listening history.
 /// </summary>
-public static class HistoryEndpoints
+/// <param name="mastodonService">The Mastodon service.</param>
+/// <param name="imageService">The image service.</param>
+/// <param name="logger">The logger.</param>
+public class HistoryEndpoints(
+    IMastodonService mastodonService,
+    IImageService imageService,
+    ILogger<HistoryEndpoints> logger)
 {
     /// <summary>
     /// Searches for #nowplaying posts in a date range.
     /// </summary>
     /// <param name="context">The HTTP context.</param>
-    /// <param name="since">Start date.</param>
-    /// <param name="until">End date.</param>
-    /// <param name="mastodonService">The Mastodon service.</param>
+    /// <param name="request">The search request parameters.</param>
     /// <returns>A list of found posts/images.</returns>
-    public static async Task<IResult> Search(
+    public async Task<IResult> Search(
         HttpContext context,
-        DateTime since,
-        DateTime until,
-        IMastodonService mastodonService)
+        HistorySearchRequest request)
     {
-        var instance = context.User.GetInstance();
-        var accessToken = context.User.GetAccessToken();
-
-        if (string.IsNullOrEmpty(instance) || string.IsNullOrEmpty(accessToken))
-        {
-            return Results.Unauthorized();
-        }
+        var instance = context.User.GetInstance() ?? throw new UnauthorizedAccessException();
+        var accessToken = context.User.GetAccessToken() ?? throw new UnauthorizedAccessException();
 
         try
         {
             var userId = await mastodonService.VerifyCredentialsAsync(instance, accessToken);
-            var posts = await mastodonService.GetTaggedPostsAsync(instance, accessToken, userId, "nowplaying", since, until);
+            var posts = await mastodonService.GetTaggedPostsAsync(instance, accessToken, userId, "nowplaying", request.Since!.Value, request.Until!.Value);
 
             var images = posts
                 .Where(p => p.MediaAttachments != null && p.MediaAttachments.Count > 0)
@@ -51,10 +48,12 @@ public static class HistoryEndpoints
         }
         catch (HttpRequestException ex)
         {
-            return Results.BadRequest(new ErrorResponse($"Failed to fetch posts: {ex.Message}"));
+            logger.LogWarning(ex, "Search failed for {instance}: {message}", instance, ex.Message);
+            throw;
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Search failed for {instance}", instance);
             return Results.BadRequest(new ErrorResponse($"An error occurred: {ex.Message}"));
         }
     }
@@ -63,11 +62,9 @@ public static class HistoryEndpoints
     /// Generates a composite image from a list of URLs.
     /// </summary>
     /// <param name="request">The request containing image URLs.</param>
-    /// <param name="imageService">The image service.</param>
     /// <returns>The generated JPEG image.</returns>
-    public static async Task<IResult> Composite(
-        CompositeRequest request,
-        IImageService imageService)
+    public async Task<IResult> Composite(
+        CompositeRequest request)
     {
         if (request.ImageUrls == null || request.ImageUrls.Count == 0)
         {
@@ -81,10 +78,12 @@ public static class HistoryEndpoints
         }
         catch (HttpRequestException ex)
         {
+            logger.LogWarning(ex, "Composite generation failed: {message}", ex.Message);
             return Results.BadRequest(new ErrorResponse($"Failed to download images: {ex.Message}"));
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Composite generation failed");
             return Results.BadRequest(new ErrorResponse($"Failed to generate composite: {ex.Message}"));
         }
     }
@@ -94,20 +93,13 @@ public static class HistoryEndpoints
     /// </summary>
     /// <param name="context">The HTTP context.</param>
     /// <param name="request">The post composite request bound from the form.</param>
-    /// <param name="mastodonService">The Mastodon service.</param>
     /// <returns>The status URL.</returns>
-    public static async Task<IResult> PostComposite(
+    public async Task<IResult> PostComposite(
         HttpContext context,
-        [Microsoft.AspNetCore.Mvc.FromForm] PostCompositeRequest request,
-        IMastodonService mastodonService)
+        [Microsoft.AspNetCore.Mvc.FromForm] PostCompositeRequest request)
     {
-        var instance = context.User.GetInstance();
-        var accessToken = context.User.GetAccessToken();
-
-        if (string.IsNullOrEmpty(instance) || string.IsNullOrEmpty(accessToken))
-        {
-            return Results.Unauthorized();
-        }
+        var instance = context.User.GetInstance() ?? throw new UnauthorizedAccessException();
+        var accessToken = context.User.GetAccessToken() ?? throw new UnauthorizedAccessException();
 
         try
         {
@@ -146,10 +138,12 @@ public static class HistoryEndpoints
         }
         catch (HttpRequestException ex)
         {
-            return Results.BadRequest(new ErrorResponse($"Failed to post composite: {ex.Message}"));
+            logger.LogWarning(ex, "Post composite failed for {instance}: {message}", instance, ex.Message);
+            throw;
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Post composite failed for {instance}", instance);
             return Results.BadRequest(new ErrorResponse($"An error occurred: {ex.Message}"));
         }
     }

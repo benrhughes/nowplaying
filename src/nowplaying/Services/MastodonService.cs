@@ -1,5 +1,6 @@
 namespace NowPlaying.Services;
 
+using System.Net;
 using System.Text.Json;
 using NowPlaying.Extensions;
 using NowPlaying.Models;
@@ -29,7 +30,7 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
         {
             var content = await response.Content.ReadAsStringAsync();
             logger.LogError("App registration failed: {StatusCode} {Content}", response.StatusCode, content);
-            throw new HttpRequestException($"Failed to register app: {response.StatusCode}");
+            throw new HttpRequestException($"Failed to register app: {response.StatusCode}", null, response.StatusCode);
         }
 
         var data = await response.Content.ReadAsAsync<Dictionary<string, object>>();
@@ -64,7 +65,7 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             logger.LogError("Token exchange failed: {StatusCode} {Content}", response.StatusCode, errorContent);
-            throw new HttpRequestException($"Failed to get access token: {response.StatusCode}");
+            throw new HttpRequestException($"Failed to get access token: {response.StatusCode}", null, response.StatusCode);
         }
 
         var data = await response.Content.ReadAsAsync<Dictionary<string, object>>();
@@ -88,7 +89,7 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             logger.LogError("Verify credentials failed: {StatusCode} {Content}", response.StatusCode, errorContent);
-            throw new HttpRequestException($"Failed to verify credentials: {response.StatusCode}");
+            throw new HttpRequestException($"Failed to verify credentials: {response.StatusCode}", null, response.StatusCode);
         }
 
         var data = await response.Content.ReadAsAsync<Dictionary<string, object>>();
@@ -124,7 +125,7 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 logger.LogError("Media upload failed: {StatusCode} {Content}", response.StatusCode, errorContent);
-                throw new HttpRequestException($"Failed to upload media: {response.StatusCode}");
+                throw new HttpRequestException($"Failed to upload media: {response.StatusCode}", null, response.StatusCode);
             }
 
             var data = await response.Content.ReadAsAsync<Dictionary<string, object>>();
@@ -157,7 +158,7 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             logger.LogError("Status post failed: {StatusCode} {Content}", response.StatusCode, errorContent);
-            throw new HttpRequestException($"Failed to post status: {response.StatusCode}");
+            throw new HttpRequestException($"Failed to post status: {response.StatusCode}", null, response.StatusCode);
         }
 
         var data = await response.Content.ReadAsAsync<Dictionary<string, object>>();
@@ -199,6 +200,11 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 logger.LogError("Get tagged posts failed: {StatusCode} {Content}", response.StatusCode, errorContent);
+                if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    throw new HttpRequestException($"Failed to get tagged posts: {response.StatusCode}", null, response.StatusCode);
+                }
+
                 break;
             }
 

@@ -48,7 +48,7 @@ export default {
                     instance = 'https://' + instance;
                 }
 
-                const response = await fetch('/api/config/register', {
+                const response = await fetch('/auth/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

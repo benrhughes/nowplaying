@@ -18,7 +18,7 @@ public class PostingEndpointsTests
     private readonly Mock<IImageService> _imageServiceMock;
     private readonly Mock<HttpContext> _httpContextMock;
     private readonly Mock<ISession> _sessionMock;
-    private readonly Mock<ILoggerFactory> _loggerFactoryMock;
+    private readonly Mock<ILogger<PostingEndpoints>> _loggerMock;
     private readonly AppConfig _config;
 
     public PostingEndpointsTests()
@@ -28,9 +28,7 @@ public class PostingEndpointsTests
         _imageServiceMock = new Mock<IImageService>();
         _httpContextMock = new Mock<HttpContext>();
         _sessionMock = new Mock<ISession>();
-        _loggerFactoryMock = new Mock<ILoggerFactory>();
-        _loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>()))
-            .Returns(new Mock<ILogger>().Object);
+        _loggerMock = new Mock<ILogger<PostingEndpoints>>();
         _config = new AppConfig 
         { 
             Port = 4444,
@@ -40,6 +38,8 @@ public class PostingEndpointsTests
 
         _httpContextMock.Setup(h => h.Session).Returns(_sessionMock.Object);
     }
+
+    private PostingEndpoints CreateEndpoints() => new(_bandcampServiceMock.Object, _mastodonServiceMock.Object, _imageServiceMock.Object, _loggerMock.Object);
 
     private void SetupAuthenticatedUser(string instance, string accessToken)
     {
@@ -66,7 +66,7 @@ public class PostingEndpointsTests
             .ReturnsAsync(scrapeResponse);
 
         // Act
-        var result = await PostingEndpoints.Scrape(_httpContextMock.Object, request, _bandcampServiceMock.Object, _loggerFactoryMock.Object);
+        var result = await CreateEndpoints().Scrape(_httpContextMock.Object, request);
 
         // Assert
         Assert.NotNull(result);
@@ -109,7 +109,7 @@ public class PostingEndpointsTests
         var request = new ScrapeRequest { Url = "https://spotify.com/album/test" };
 
         // Act
-        var result = await PostingEndpoints.Scrape(_httpContextMock.Object, request, _bandcampServiceMock.Object, _loggerFactoryMock.Object);
+        var result = await CreateEndpoints().Scrape(_httpContextMock.Object, request);
 
         // Assert
         Assert.NotNull(result);
@@ -133,7 +133,7 @@ public class PostingEndpointsTests
             .ReturnsAsync(("status-id", "https://mastodon.social/@user/123"));
  
         // Act
-        var result = await PostingEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _imageServiceMock.Object, _loggerFactoryMock.Object);
+        var result = await CreateEndpoints().Post(_httpContextMock.Object, request);
  
         // Assert
         Assert.NotNull(result);
@@ -146,10 +146,8 @@ public class PostingEndpointsTests
         var request = new PostRequest { Text = "Check this out!", ImageUrl = "https://example.com/image.jpg" };
  
         // Act
-        var result = await PostingEndpoints.Post(_httpContextMock.Object, request, _mastodonServiceMock.Object, _imageServiceMock.Object, _loggerFactoryMock.Object);
- 
         // Assert
-        Assert.NotNull(result);
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => CreateEndpoints().Post(_httpContextMock.Object, request));
     }
 
     [Fact]
@@ -180,6 +178,23 @@ public class PostingEndpointsTests
         // Assert
         Assert.False(isValid);
         Assert.Contains(validationResults, r => r.MemberNames.Contains(nameof(PostRequest.ImageUrl)));
+    }
+
+    [Fact]
+    public async Task Post_ReturnsUnauthorized_WhenMastodonServiceThrows401()
+    {
+        // Arrange
+        var request = new PostRequest { Text = "Check this out!", ImageUrl = "https://example.com/image.jpg" };
+        SetupAuthenticatedUser("https://mastodon.social", "test-token");
+
+        _imageServiceMock.Setup(i => i.DownloadImageAsync(request.ImageUrl))
+            .ReturnsAsync(new byte[] { 0x89, 0x50, 0x4E, 0x47 });
+
+        _mastodonServiceMock.Setup(m => m.UploadMediaAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<byte[]>(), null))
+            .ThrowsAsync(new HttpRequestException("Unauthorized", null, System.Net.HttpStatusCode.Unauthorized));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpRequestException>(() => CreateEndpoints().Post(_httpContextMock.Object, request));
     }
 
     private class MockImageHttpHandler : HttpMessageHandler

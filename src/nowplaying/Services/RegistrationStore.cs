@@ -5,7 +5,9 @@ namespace NowPlaying.Services;
 /// <summary>
 /// In-memory store for registered Mastodon app credentials per instance.
 /// </summary>
-public class RegistrationStore : IRegistrationStore
+/// <param name="logger">The logger.</param>
+public class RegistrationStore(ILogger<RegistrationStore> logger)
+    : IRegistrationStore
 {
     private readonly ConcurrentDictionary<string, RegistrationInfo> _store = new ConcurrentDictionary<string, RegistrationInfo>();
 
@@ -21,6 +23,7 @@ public class RegistrationStore : IRegistrationStore
         var key = instance.TrimEnd('/');
         var info = new RegistrationInfo(clientId, clientSecret, redirectUri);
         _store[key] = info;
+        logger.LogInformation("Registered app for instance: {Instance}", instance);
     }
 
     /// <summary>

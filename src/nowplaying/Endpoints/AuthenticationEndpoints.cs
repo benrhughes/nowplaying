@@ -10,16 +10,23 @@ using NowPlaying.Services;
 /// <summary>
 /// Authentication endpoints for OAuth.
 /// </summary>
-public static class AuthenticationEndpoints
+/// <param name="mastodonService">The Mastodon service.</param>
+/// <param name="logger">The logger.</param>
+/// <param name="registrationStore">The registration store.</param>
+/// <param name="config">The app configuration.</param>
+public class AuthenticationEndpoints(
+    IMastodonService mastodonService,
+    ILogger<AuthenticationEndpoints> logger,
+    IRegistrationStore registrationStore,
+    AppConfig config)
 {
     /// <summary>
     /// Initiates the OAuth login process.
     /// </summary>
     /// <param name="context">The HTTP context.</param>
     /// <param name="instance">The optional instance URL.</param>
-    /// <param name="registrationStore">The registration store.</param>
     /// <returns>A redirect to the OAuth authorize URL.</returns>
-    public static IResult Login(HttpContext context, string? instance, IRegistrationStore registrationStore)
+    public IResult Login(HttpContext context, string? instance)
     {
         instance ??= context.Session.GetString("instance");
 
@@ -53,16 +60,10 @@ public static class AuthenticationEndpoints
     /// </summary>
     /// <param name="context">The HTTP context.</param>
     /// <param name="code">The authorization code.</param>
-    /// <param name="mastodonService">The Mastodon service.</param>
-    /// <param name="loggerFactory">The logger factory.</param>
-    /// <param name="registrationStore">The registration store.</param>
     /// <returns>A redirect to the homepage.</returns>
-    public static async Task<IResult> Callback(
+    public async Task<IResult> Callback(
         HttpContext context,
-        string? code,
-        IMastodonService mastodonService,
-        ILoggerFactory loggerFactory,
-        IRegistrationStore registrationStore)
+        string? code)
     {
         if (string.IsNullOrEmpty(code))
         {
@@ -95,23 +96,24 @@ public static class AuthenticationEndpoints
             var principal = new ClaimsPrincipal(identity);
 
             // Sign in the user with cookie authentication
-            await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties
-            {
-                IsPersistent = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24)
-            });
+            await context.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal,
+                new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    AllowRefresh = true,
+                });
 
             return Results.Redirect("/");
         }
         catch (HttpRequestException ex)
         {
-            var logger = loggerFactory.CreateLogger(nameof(AuthenticationEndpoints));
             logger.LogWarning(ex, "OAuth callback failed: {message}", ex.Message);
             return Results.BadRequest(new ErrorResponse($"OAuth failed: {ex.Message}"));
         }
         catch (Exception ex)
         {
-            var logger = loggerFactory.CreateLogger(nameof(AuthenticationEndpoints));
             logger.LogError(ex, "OAuth callback failed");
             return Results.StatusCode(StatusCodes.Status500InternalServerError);
         }
@@ -122,10 +124,69 @@ public static class AuthenticationEndpoints
     /// </summary>
     /// <param name="context">The HTTP context.</param>
     /// <returns>A redirect to the homepage.</returns>
-    public static async Task<IResult> Logout(HttpContext context)
+    public async Task<IResult> Logout(HttpContext context)
     {
         await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         context.Session.Clear();
         return Results.Redirect("/");
+    }
+
+    /// <summary>
+    /// Registers the application with a Mastodon instance.
+    /// </summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <param name="request">The registration request.</param>
+    /// <returns>The registration response.</returns>
+    public async Task<IResult> Register(
+        HttpContext context,
+        RegisterRequest request)
+    {
+        string instance;
+        try
+        {
+            instance = request.Instance.NormalizeInstance();
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(new ErrorResponse(ex.Message));
+        }
+
+        try
+        {
+            var (clientId, clientSecret) = await mastodonService.RegisterAppAsync(instance, config.RedirectUri);
+
+            // Persist instance in session for pre-auth flows, but keep client credentials in server-side store
+            context.Session.SetString("instance", instance);
+            registrationStore.Add(instance, clientId, clientSecret, config.RedirectUri);
+
+            return Results.Ok(new RegistrationResponse(true, instance));
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogWarning(ex, "App registration failed for {instance}: {message}", instance, ex.Message);
+            return Results.BadRequest(new ErrorResponse($"Failed to register with instance: {ex.Message}"));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "App registration failed for {instance}", instance);
+            return Results.StatusCode(StatusCodes.Status500InternalServerError);
+        }
+    }
+
+    /// <summary>
+    /// Returns the current authentication status.
+    /// </summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <returns>The status response.</returns>
+    public IResult Status(HttpContext context)
+    {
+        var instance = context.User.GetInstance() ?? context.Session.GetString("instance");
+
+        var registered = !string.IsNullOrEmpty(instance) && registrationStore.Has(instance);
+
+        return Results.Ok(new StatusResponse(
+            Authenticated: context.User.Identity?.IsAuthenticated ?? false,
+            Instance: instance,
+            Registered: registered));
     }
 }

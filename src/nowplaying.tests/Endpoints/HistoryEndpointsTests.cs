@@ -3,6 +3,7 @@ namespace NowPlaying.Tests.Endpoints;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Moq;
 using NowPlaying.Endpoints;
@@ -15,12 +16,14 @@ public class HistoryEndpointsTests
 {
     private readonly Mock<IMastodonService> _mastodonServiceMock;
     private readonly Mock<IImageService> _imageServiceMock;
+    private readonly Mock<ILogger<HistoryEndpoints>> _loggerMock;
     private readonly DefaultHttpContext _context;
 
     public HistoryEndpointsTests()
     {
         _mastodonServiceMock = new Mock<IMastodonService>();
         _imageServiceMock = new Mock<IImageService>();
+        _loggerMock = new Mock<ILogger<HistoryEndpoints>>();
         _context = new DefaultHttpContext();
         
         // Setup session
@@ -47,6 +50,8 @@ public class HistoryEndpointsTests
         _context.Session = sessionMock.Object;
     }
 
+    private HistoryEndpoints CreateEndpoints() => new(_mastodonServiceMock.Object, _imageServiceMock.Object, _loggerMock.Object);
+
     private void SetupAuthenticatedUser(string instance, string accessToken)
     {
         var claims = ClaimsExtensions.CreateAuthenticationClaims(instance, accessToken);
@@ -58,11 +63,8 @@ public class HistoryEndpointsTests
     [Fact]
     public async Task Search_ReturnsUnauthorized_WhenNoSession()
     {
-        // Act
-        var result = await HistoryEndpoints.Search(_context, DateTime.Now, DateTime.Now, _mastodonServiceMock.Object);
-
-        // Assert
-        Assert.IsType<UnauthorizedHttpResult>(result);
+        // Act & Assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now, Until = DateTime.Now }));
     }
 
     [Fact]
@@ -83,7 +85,7 @@ public class HistoryEndpointsTests
             .ReturnsAsync(posts);
 
         // Act
-        var result = await HistoryEndpoints.Search(_context, DateTime.Now.AddDays(-1), DateTime.Now, _mastodonServiceMock.Object);
+        var result = await CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now.AddDays(-1), Until = DateTime.Now });
 
         // Assert
         // We use IValueHttpResult because we can't easily assert the generic type of Ok<List<AnonymousType>>
@@ -97,7 +99,7 @@ public class HistoryEndpointsTests
     public async Task Composite_ReturnsBadRequest_WhenNoUrls()
     {
         var request = new CompositeRequest { ImageUrls = new List<string>() };
-        var result = await HistoryEndpoints.Composite(request, _imageServiceMock.Object);
+        var result = await CreateEndpoints().Composite(request);
         
         var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
 #pragma warning disable CS8602
@@ -112,7 +114,7 @@ public class HistoryEndpointsTests
         _imageServiceMock.Setup(x => x.GenerateCompositeAsync(It.IsAny<IEnumerable<string>>()))
             .ReturnsAsync(new byte[] { 1, 2, 3 });
 
-        var result = await HistoryEndpoints.Composite(request, _imageServiceMock.Object) ?? throw new InvalidOperationException("Result should not be null");
+        var result = await CreateEndpoints().Composite(request) ?? throw new InvalidOperationException("Result should not be null");
 
         var fileResult = Assert.IsType<FileContentHttpResult>(result);
         Assert.Equal("image/jpeg", fileResult.ContentType);
@@ -122,13 +124,10 @@ public class HistoryEndpointsTests
     [Fact]
     public async Task PostComposite_ReturnsUnauthorized_WhenNoSession()
     {
-        // Act
+        // Act & Assert
         var emptyImage = new FormFile(new MemoryStream(new byte[0]), 0, 0, "image", "empty.jpg");
         var unauthRequest = new PostCompositeRequest { Image = emptyImage, AltText = null, Text = string.Empty };
-        var result = await HistoryEndpoints.PostComposite(_context, unauthRequest, _mastodonServiceMock.Object);
-
-        // Assert
-        Assert.IsType<UnauthorizedHttpResult>(result);
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => CreateEndpoints().PostComposite(_context, unauthRequest));
     }
 
     [Fact]
@@ -138,7 +137,7 @@ public class HistoryEndpointsTests
         SetupAuthenticatedUser("https://mastodon.social", "token");
         
         var formCollection = new FormCollection(
-            new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            new Dictionary<string, StringValues>
             {
                 { "altText", "Test alt text" },
                 { "text", "Test post" }
@@ -151,7 +150,7 @@ public class HistoryEndpointsTests
         // Act
         var emptyImage = new FormFile(new MemoryStream(new byte[0]), 0, 0, "image", "empty.jpg");
         var request = new PostCompositeRequest { Image = emptyImage, AltText = null, Text = string.Empty };
-        var result = await HistoryEndpoints.PostComposite(_context, request, _mastodonServiceMock.Object);
+        var result = await CreateEndpoints().PostComposite(_context, request);
 
         // Assert
         var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
@@ -170,7 +169,7 @@ public class HistoryEndpointsTests
         var formFile = new FormFile(imageStream, 0, imageStream.Length, "image", "test.jpg");
         
         var formCollection = new FormCollection(
-            new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            new Dictionary<string, StringValues>
             {
                 { "altText", "Test alt text" }
             },
@@ -181,13 +180,9 @@ public class HistoryEndpointsTests
 
         // Act
         var request = new PostCompositeRequest { Image = formFile, AltText = null, Text = string.Empty };
-        var result = await HistoryEndpoints.PostComposite(_context, request, _mastodonServiceMock.Object);
-
-        // Assert
+        var result = await CreateEndpoints().PostComposite(_context, request);
         var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
-#pragma warning disable CS8602
-        Assert.Equal("No post text provided", badRequest.Value.Error);
-#pragma warning restore CS8602
+        Assert.Equal("No post text provided", badRequest.Value!.Error);
     }
 
     [Fact]
@@ -200,7 +195,7 @@ public class HistoryEndpointsTests
         var formFile = new FormFile(imageStream, 0, imageStream.Length, "image", "test.jpg");
         
         var formCollection = new FormCollection(
-            new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            new Dictionary<string, StringValues>
             {
                 { "altText", "Test alt text" },
                 { "text", "Test post" }
@@ -218,13 +213,11 @@ public class HistoryEndpointsTests
 
         // Act
         var request = new PostCompositeRequest { Image = formFile, AltText = "Test alt text", Text = "Test post" };
-        var result = await HistoryEndpoints.PostComposite(_context, request, _mastodonServiceMock.Object);
+        var result = await CreateEndpoints().PostComposite(_context, request);
 
         // Assert
         var okResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
-#pragma warning disable CS8602
         Assert.NotNull(okResult.Value);
-#pragma warning restore CS8602
         
         _mastodonServiceMock.Verify(
             x => x.UploadMediaAsync("https://mastodon.social", "token", It.IsAny<byte[]>(), "Test alt text"),
@@ -245,7 +238,7 @@ public class HistoryEndpointsTests
         var formFile = new FormFile(imageStream, 0, imageStream.Length, "image", "test.jpg");
         
         var formCollection = new FormCollection(
-            new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+            new Dictionary<string, StringValues>
             {
                 { "altText", "Test alt text" },
                 { "text", "Test post" }
@@ -258,14 +251,49 @@ public class HistoryEndpointsTests
         _mastodonServiceMock.Setup(x => x.UploadMediaAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<string>()))
             .ThrowsAsync(new HttpRequestException("Upload failed"));
 
-        // Act
+        // Act & Assert
         var request = new PostCompositeRequest { Image = formFile, AltText = "Test alt text", Text = "Test post" };
-        var result = await HistoryEndpoints.PostComposite(_context, request, _mastodonServiceMock.Object);
+        await Assert.ThrowsAsync<HttpRequestException>(() => CreateEndpoints().PostComposite(_context, request));
+    }
 
-        // Assert
-        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
-#pragma warning disable CS8602
-        Assert.Contains("Upload failed", badRequest.Value.Error);
-#pragma warning restore CS8602
+    [Fact]
+    public async Task PostComposite_ReturnsUnauthorized_WhenMastodonServiceThrows401()
+    {
+        // Arrange
+        SetupAuthenticatedUser("https://mastodon.social", "token");
+
+        var imageStream = new MemoryStream(new byte[] { 1, 2, 3 });
+        var formFile = new FormFile(imageStream, 0, imageStream.Length, "image", "test.jpg");
+        
+        var formCollection = new FormCollection(
+            new Dictionary<string, StringValues>
+            {
+                { "altText", "Test alt text" },
+                { "text", "Test post" }
+            },
+            new FormFileCollection { formFile });
+        
+        _context.Request.ContentType = "multipart/form-data";
+        _context.Request.Form = formCollection;
+
+        _mastodonServiceMock.Setup(x => x.UploadMediaAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<string>()))
+            .ThrowsAsync(new HttpRequestException("Unauthorized", null, System.Net.HttpStatusCode.Unauthorized));
+
+        // Act & Assert
+        var request = new PostCompositeRequest { Image = formFile, AltText = "Test alt text", Text = "Test post" };
+        await Assert.ThrowsAsync<HttpRequestException>(() => CreateEndpoints().PostComposite(_context, request));
+    }
+
+    [Fact]
+    public async Task Search_ReturnsUnauthorized_WhenMastodonServiceThrows401()
+    {
+        // Arrange
+        SetupAuthenticatedUser("https://mastodon.social", "token");
+
+        _mastodonServiceMock.Setup(x => x.VerifyCredentialsAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ThrowsAsync(new HttpRequestException("Unauthorized", null, System.Net.HttpStatusCode.Unauthorized));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpRequestException>(() => CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now.AddDays(-1), Until = DateTime.Now }));
     }
 }

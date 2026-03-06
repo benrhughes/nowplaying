@@ -50,8 +50,8 @@ public static class ClaimsExtensions
     {
         return new List<Claim>
         {
-            new Claim(InstanceClaimType, instance),
-            new Claim(AccessTokenClaimType, accessToken)
+            new (InstanceClaimType, instance),
+            new (AccessTokenClaimType, accessToken)
         };
     }
 }

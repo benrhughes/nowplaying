@@ -55,12 +55,12 @@ describe('App Component', () => {
     wrapper = mount(App);
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.vm.view).toBe('post');
-    expect(wrapper.vm.viewComponent).toBe('Post');
+    expect(wrapper.vm.view).toBe('bandcamp');
+    expect(wrapper.vm.viewComponent).toBe('Bandcamp');
 
-    wrapper.vm.view = 'review';
+    wrapper.vm.view = 'history';
     await wrapper.vm.$nextTick();
-    expect(wrapper.vm.viewComponent).toBe('Review');
+    expect(wrapper.vm.viewComponent).toBe('History');
   });
 
   it('handles fetch error gracefully', async () => {
