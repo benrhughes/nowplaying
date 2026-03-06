@@ -1,1 +1,0 @@
-I'd like to tidy up the 'review' page a bit. We have basically the saem lot of functionalty twice, but implemented completed differently. Rather than Post to Mastdon

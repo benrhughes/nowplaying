@@ -75,6 +75,8 @@ export default {
         },
         reset() {
             this.scrapedData = null;
+            this.postText = '';
+            this.altText = '';
             this.error = null;
             this.url = '';
         }

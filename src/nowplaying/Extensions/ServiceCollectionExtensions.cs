@@ -49,7 +49,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IRegistrationStore, RegistrationStore>();
 
         // Register authorization handler and policy for Mastodon token validation
-        services.AddSingleton<IAuthorizationHandler, MastodonAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, MastodonAuthorizationHandler>();
         services.AddAuthorization(options =>
         {
             options.AddPolicy("MastodonValid", policy => policy.RequireAuthenticatedUser().AddRequirements(new MastodonRequirement()));
@@ -78,7 +78,7 @@ public static class ServiceCollectionExtensions
             .WithTags("Authentication");
 
         authGroup.MapGet("/login", (AuthenticationEndpoints e, HttpContext c, string? instance) => e.Login(c, instance));
-        authGroup.MapGet("/callback", (AuthenticationEndpoints e, HttpContext c, string? code) => e.Callback(c, code));
+        authGroup.MapGet("/callback", (AuthenticationEndpoints e, HttpContext c, string? code, string? state) => e.Callback(c, code, state));
         authGroup.MapGet("/logout", (AuthenticationEndpoints e, HttpContext c) => e.Logout(c));
         authGroup.MapPost("/register", (AuthenticationEndpoints e, HttpContext c, RegisterRequest r) => e.Register(c, r));
         authGroup.MapGet("/status", (AuthenticationEndpoints e, HttpContext c) => e.Status(c));

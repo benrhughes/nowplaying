@@ -1,5 +1,7 @@
 namespace NowPlaying.Services;
 
+using System.Net;
+using System.Net.Sockets;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -16,6 +18,7 @@ public class ImageService(HttpClient httpClient, ILogger<ImageService> logger)
     /// <inheritdoc/>
     public async Task<byte[]> DownloadImageAsync(string url)
     {
+        await ValidateUrlAsync(url);
         return await httpClient.GetByteArrayAsync(url);
     }
 
@@ -86,5 +89,81 @@ public class ImageService(HttpClient httpClient, ILogger<ImageService> logger)
                 img.Dispose();
             }
         }
+    }
+
+    private static async Task ValidateUrlAsync(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            throw new ArgumentException("Invalid URL");
+        }
+
+        if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+        {
+            throw new ArgumentException("Only HTTP/HTTPS schemes are allowed");
+        }
+
+        if (uri.IsLoopback)
+        {
+            throw new ArgumentException("Localhost access is not allowed");
+        }
+
+        try
+        {
+            var ips = await Dns.GetHostAddressesAsync(uri.Host);
+            foreach (var ip in ips)
+            {
+                if (IPAddress.IsLoopback(ip) || IsPrivateIp(ip))
+                {
+                    throw new ArgumentException($"Host {uri.Host} resolves to a private or loopback IP address");
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not ArgumentException)
+        {
+            throw new ArgumentException($"Could not resolve host: {uri.Host}");
+        }
+    }
+
+    private static bool IsPrivateIp(IPAddress ip)
+    {
+        if (ip.AddressFamily == AddressFamily.InterNetwork)
+        {
+            byte[] bytes = ip.GetAddressBytes();
+
+            // 10.0.0.0/8
+            if (bytes[0] == 10)
+            {
+                return true;
+            }
+
+            // 172.16.0.0/12
+            if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
+            {
+                return true;
+            }
+
+            // 192.168.0.0/16
+            if (bytes[0] == 192 && bytes[1] == 168)
+            {
+                return true;
+            }
+
+            // 169.254.0.0/16 (Link-local)
+            if (bytes[0] == 169 && bytes[1] == 254)
+            {
+                return true;
+            }
+        }
+        else if (ip.AddressFamily == AddressFamily.InterNetworkV6)
+        {
+            // Unique local address (fc00::/7)
+            if (ip.IsIPv6SiteLocal || ip.IsIPv6LinkLocal || (ip.GetAddressBytes()[0] & 0xFE) == 0xFC)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

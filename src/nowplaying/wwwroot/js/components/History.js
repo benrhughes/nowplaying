@@ -25,7 +25,7 @@ export default {
                 </button>
                 <p v-if="error" class="message-error">{{ error }}</p>
 
-                <article v-if="posts.length > 0 && generating" aria-busy="true">
+                <article v-if="posts.length > 0 && generating" aria-busy="true" ref="generatingStatus">
                     Generating composite image...
                     <footer>Processing {{ posts.length }} albums. This may take a few moments.</footer>
                 </article>
@@ -45,7 +45,7 @@ export default {
                     </figure>
 
                     <div>
-                        <button @click="showPostForm = true">Share to Mastodon</button>
+                        <button @click="openPostForm">Share to Mastodon</button>
                     </div>
 
                     <details v-if="posts.length > 0">
@@ -61,6 +61,7 @@ export default {
 
             <!-- Preview & Post -->
             <MastodonPost v-else
+                ref="postForm"
                 :initial-text="postText"
                 :initial-alt-text="altText"
                 :image-blob="compositeBlob"
@@ -129,6 +130,9 @@ export default {
         async generateComposite() {
             this.generating = true;
             this.error = null;
+            await this.$nextTick();
+            this.$refs.generatingStatus?.scrollIntoView({ behavior: 'smooth' });
+
             try {
                 const imageUrls = this.posts.map(p => p.imageUrl);
                 const res = await fetch('/api/history/composite', {
@@ -147,6 +151,12 @@ export default {
             } finally {
                 this.generating = false;
             }
+        },
+        async openPostForm() {
+            this.showPostForm = true;
+            await this.$nextTick();
+            const el = this.$refs.postForm.$el || this.$refs.postForm;
+            el?.scrollIntoView({ behavior: 'smooth' });
         },
         handlePosted() {
             this.showPostForm = false;

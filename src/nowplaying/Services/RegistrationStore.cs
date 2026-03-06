@@ -1,15 +1,19 @@
 using System.Collections.Concurrent;
+using System.Text.Json;
 
 namespace NowPlaying.Services;
 
 /// <summary>
-/// In-memory store for registered Mastodon app credentials per instance.
+/// Persistent store for registered Mastodon app credentials per instance.
 /// </summary>
 /// <param name="logger">The logger.</param>
-public class RegistrationStore(ILogger<RegistrationStore> logger)
+/// <param name="env">The host environment.</param>
+public class RegistrationStore(ILogger<RegistrationStore> logger, IHostEnvironment env)
     : IRegistrationStore
 {
-    private readonly ConcurrentDictionary<string, RegistrationInfo> _store = new ConcurrentDictionary<string, RegistrationInfo>();
+    private readonly string _filePath = Path.Combine(env.ContentRootPath, "registrations.json");
+    private readonly ConcurrentDictionary<string, RegistrationInfo> _store = LoadStore(Path.Combine(env.ContentRootPath, "registrations.json"), logger);
+    private readonly object _fileLock = new object();
 
     /// <summary>
     /// Adds or updates registration information for the specified instance.
@@ -23,6 +27,7 @@ public class RegistrationStore(ILogger<RegistrationStore> logger)
         var key = instance.TrimEnd('/');
         var info = new RegistrationInfo(clientId, clientSecret, redirectUri);
         _store[key] = info;
+        Save();
         logger.LogInformation("Registered app for instance: {Instance}", instance);
     }
 
@@ -57,5 +62,43 @@ public class RegistrationStore(ILogger<RegistrationStore> logger)
         }
 
         return _store.ContainsKey(instance.TrimEnd('/'));
+    }
+
+    private static ConcurrentDictionary<string, RegistrationInfo> LoadStore(string path, ILogger logger)
+    {
+        if (!File.Exists(path))
+        {
+            return new ConcurrentDictionary<string, RegistrationInfo>();
+        }
+
+        try
+        {
+            var json = File.ReadAllText(path);
+            var dict = JsonSerializer.Deserialize<Dictionary<string, RegistrationInfo>>(json);
+            return dict != null
+                ? new ConcurrentDictionary<string, RegistrationInfo>(dict)
+                : new ConcurrentDictionary<string, RegistrationInfo>();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to load registration store from {Path}", path);
+            return new ConcurrentDictionary<string, RegistrationInfo>();
+        }
+    }
+
+    private void Save()
+    {
+        lock (_fileLock)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(_store, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(_filePath, json);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to save registration store to {Path}", _filePath);
+            }
+        }
     }
 }

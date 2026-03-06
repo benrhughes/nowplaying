@@ -45,12 +45,15 @@ public class AuthenticationEndpoints(
 
         var clientId = info.ClientId;
         var redirectUri = info.RedirectUri;
+        var state = Guid.NewGuid().ToString("N");
+        context.Session.SetString("oauth_state", state);
 
         var authUrl = $"{instance}/oauth/authorize?" +
                       $"client_id={Uri.EscapeDataString(clientId)}" +
                       $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
                       $"&response_type=code" +
-                      $"&scope={Uri.EscapeDataString(AppConfig.OAuthScopes)}";
+                      $"&scope={Uri.EscapeDataString(AppConfig.OAuthScopes)}" +
+                      $"&state={state}";
 
         return Results.Redirect(authUrl);
     }
@@ -60,14 +63,25 @@ public class AuthenticationEndpoints(
     /// </summary>
     /// <param name="context">The HTTP context.</param>
     /// <param name="code">The authorization code.</param>
+    /// <param name="state">The state parameter for CSRF protection.</param>
     /// <returns>A redirect to the homepage.</returns>
     public async Task<IResult> Callback(
         HttpContext context,
-        string? code)
+        string? code,
+        string? state)
     {
         if (string.IsNullOrEmpty(code))
         {
             return Results.BadRequest(new ErrorResponse("No authorization code provided"));
+        }
+
+        var storedState = context.Session.GetString("oauth_state");
+        context.Session.Remove("oauth_state");
+
+        if (string.IsNullOrEmpty(state) || state != storedState)
+        {
+            logger.LogWarning("Invalid state parameter during OAuth callback.");
+            return Results.BadRequest(new ErrorResponse("Invalid state parameter (CSRF protection)"));
         }
 
         var instance = context.Session.GetString("instance");
@@ -84,14 +98,15 @@ public class AuthenticationEndpoints(
 
         var clientId = reg.ClientId;
         var clientSecret = reg.ClientSecret;
-        var redirectUri = reg.RedirectUri ?? "http://localhost:4444/auth/callback";
+        var redirectUri = reg.RedirectUri; // Should not be null if registered correctly
 
         try
         {
             var accessToken = await mastodonService.GetAccessTokenAsync(instance, clientId, clientSecret, code, redirectUri);
+            var userId = await mastodonService.VerifyCredentialsAsync(instance, accessToken);
 
             // Create claims for the authenticated user
-            var claims = ClaimsExtensions.CreateAuthenticationClaims(instance, accessToken?.Trim() ?? string.Empty);
+            var claims = ClaimsExtensions.CreateAuthenticationClaims(instance, accessToken?.Trim() ?? string.Empty, userId);
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
 

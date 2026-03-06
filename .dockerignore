@@ -32,3 +32,11 @@ docker-compose.yml
 Dockerfile*
 .dockerignore
 deploy.sh
+
+# Local config & secrets
+**/appsettings.Development.json
+**/appsettings.*.json
+!**/appsettings.json
+**/*.env
+**/registrations.json
+

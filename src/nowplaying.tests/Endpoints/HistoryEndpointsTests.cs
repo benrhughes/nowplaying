@@ -54,7 +54,7 @@ public class HistoryEndpointsTests
 
     private void SetupAuthenticatedUser(string instance, string accessToken)
     {
-        var claims = ClaimsExtensions.CreateAuthenticationClaims(instance, accessToken);
+        var claims = ClaimsExtensions.CreateAuthenticationClaims(instance, accessToken, "test-user-id");
         var identity = new ClaimsIdentity(claims, "test");
         var principal = new ClaimsPrincipal(identity);
         _context.User = principal;

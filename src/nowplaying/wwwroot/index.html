@@ -5,26 +5,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NowPlaying</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1.5.10/css/pico.min.css" integrity="sha384-JnI9fsy7u0hXe2CXur8V8MkHfeqi2q7x6KYi4DbEYIjZJuP2Z2eMlp2RbdO7p3zL" crossorigin="anonymous">
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
   <div id="app"></div>
 
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-  <script>
-    // Define import map for ES modules
-    const importMap = {
-      imports: {
-        'vue': 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js'
-      }
-    };
-    document.head.appendChild(Object.assign(document.createElement('script'), {
-      type: 'importmap',
-      textContent: JSON.stringify(importMap)
-    }));
-  </script>
+  <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js" integrity="sha384-6pS1WSZJY7wOk6qQTa9C9U2W1/qzqL7iYoMil7qn9KFeN5fZDAwIExgCd7U5AH+X" crossorigin="anonymous"></script>
+  <script src="js/setup.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>
 

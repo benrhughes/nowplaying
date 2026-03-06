@@ -9,6 +9,7 @@ public static class ClaimsExtensions
 {
     private const string InstanceClaimType = "instance";
     private const string AccessTokenClaimType = "accessToken";
+    private const string UserIdClaimType = "userid";
 
     /// <summary>
     /// Extracts the Mastodon instance URL from claims.
@@ -41,17 +42,34 @@ public static class ClaimsExtensions
     }
 
     /// <summary>
-    /// Creates claims for instance and access token.
+    /// Extracts the Mastodon user ID from claims.
+    /// </summary>
+    /// <param name="principal">The claims principal.</param>
+    /// <returns>The user ID or null if not found.</returns>
+    public static string? GetUserId(this ClaimsPrincipal principal)
+    {
+        if (principal == null)
+        {
+            return null;
+        }
+
+        return principal.FindFirst(UserIdClaimType)?.Value;
+    }
+
+    /// <summary>
+    /// Creates claims for instance, access token, and user ID.
     /// </summary>
     /// <param name="instance">The Mastodon instance URL.</param>
     /// <param name="accessToken">The OAuth access token.</param>
+    /// <param name="userId">The Mastodon user ID.</param>
     /// <returns>A list of claims.</returns>
-    public static List<Claim> CreateAuthenticationClaims(string instance, string accessToken)
+    public static List<Claim> CreateAuthenticationClaims(string instance, string accessToken, string userId)
     {
-        return new List<Claim>
-        {
+        return
+        [
             new (InstanceClaimType, instance),
-            new (AccessTokenClaimType, accessToken)
-        };
+            new (AccessTokenClaimType, accessToken),
+            new (UserIdClaimType, userId)
+        ];
     }
 }
