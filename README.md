@@ -31,8 +31,8 @@ See [SETUP.md](SETUP.md) for detailed installation instructions.
 
 ##  Contributing
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for architecture details and coding standards.
+PRs are welcome. Please not this is a GPL v3 licensed codebase and contributions will fall under than license. 
 
-## 📄 License
+## License
 
 GPL v3
