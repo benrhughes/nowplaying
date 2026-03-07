@@ -1,10 +1,9 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 using System.Text.Json;
-using NowPlaying.Extensions;
-using NowPlaying.Models;
-using NowPlaying.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
+using NowPlaying.Models;
+using NowPlaying.Services;
 using Xunit;
 
 namespace NowPlaying.Tests.Services;
@@ -83,7 +82,7 @@ public class MastodonServiceTests
         var service = CreateService("Error", System.Net.HttpStatusCode.BadRequest);
 
         // Act & Assert
-        await Assert.ThrowsAsync<HttpRequestException>(() => 
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
             service.GetAccessTokenAsync(Instance, "client-id", "secret", "code", RedirectUri));
     }
 
@@ -95,7 +94,7 @@ public class MastodonServiceTests
         var service = CreateService(JsonSerializer.Serialize(responseData));
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             service.GetAccessTokenAsync(Instance, "client-id", "secret", "code", RedirectUri));
     }
 
@@ -124,7 +123,7 @@ public class MastodonServiceTests
         var imageData = new byte[] { 0x89, 0x50, 0x4E, 0x47 };
 
         // Act & Assert
-        await Assert.ThrowsAsync<HttpRequestException>(() => 
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
             service.UploadMediaAsync(Instance, "access-token", imageData, "Alt text"));
     }
 
@@ -138,7 +137,7 @@ public class MastodonServiceTests
         var imageData = new byte[] { 0x89, 0x50, 0x4E, 0x47 };
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             service.UploadMediaAsync(Instance, "access-token", imageData, "Alt text"));
     }
 
@@ -178,7 +177,7 @@ public class MastodonServiceTests
         var service = CreateService("Error", System.Net.HttpStatusCode.BadRequest);
 
         // Act & Assert
-        await Assert.ThrowsAsync<HttpRequestException>(() => 
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
             service.PostStatusAsync(Instance, "access-token", "Test post", "media-123"));
     }
 
@@ -190,7 +189,7 @@ public class MastodonServiceTests
         var service = CreateService(JsonSerializer.Serialize(responseData));
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             service.PostStatusAsync(Instance, "access-token", "Test post", "media-123"));
     }
 
@@ -202,7 +201,7 @@ public class MastodonServiceTests
         var service = CreateService(JsonSerializer.Serialize(responseData));
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             service.PostStatusAsync(Instance, "access-token", "Test post", "media-123"));
     }
 
@@ -245,6 +244,7 @@ public class MastodonServiceTests
                 response.Content = new StringContent(_content);
                 response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
             }
+
             return Task.FromResult(response);
         }
     }

@@ -1,11 +1,10 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
-using NowPlaying.Endpoints;
-using NowPlaying.Models;
-using NowPlaying.Services;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
+using NowPlaying.Endpoints;
+using NowPlaying.Models;
+using NowPlaying.Services;
 using Xunit;
 
 namespace NowPlaying.Tests.Endpoints;
@@ -49,8 +48,8 @@ public class AuthenticationEndpointsTests
     private void SetupSessionString(string key, string value)
     {
         var bytes = System.Text.Encoding.UTF8.GetBytes(value);
-        _sessionMock.Setup(s => s.TryGetValue(key, out It.Ref<byte[]?>.IsAny))
-            .Returns((string k, out byte[]? v) =>
+        _sessionMock.Setup(s => s.TryGetValue(key, out It.Ref<byte[] ?>.IsAny))
+            .Returns((string k, out byte[] ? v) =>
             {
                 v = bytes;
                 return true;

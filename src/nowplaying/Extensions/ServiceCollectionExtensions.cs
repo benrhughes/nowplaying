@@ -1,7 +1,6 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 namespace NowPlaying.Extensions;
 
-using System.Security.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using NowPlaying.Authorization;
 using NowPlaying.Endpoints;

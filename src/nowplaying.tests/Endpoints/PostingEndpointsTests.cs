@@ -1,13 +1,13 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Moq;
 using NowPlaying.Endpoints;
 using NowPlaying.Extensions;
 using NowPlaying.Models;
 using NowPlaying.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using Moq;
 using Xunit;
 
 namespace NowPlaying.Tests.Endpoints;
@@ -30,8 +30,8 @@ public class PostingEndpointsTests
         _httpContextMock = new Mock<HttpContext>();
         _sessionMock = new Mock<ISession>();
         _loggerMock = new Mock<ILogger<PostingEndpoints>>();
-        _config = new AppConfig 
-        { 
+        _config = new AppConfig
+        {
             Port = 4444,
             RedirectUri = "http://localhost:4444/auth/callback",
             SessionSecret = "dev-secret"
@@ -121,21 +121,21 @@ public class PostingEndpointsTests
     {
         // Arrange
         var request = new PostRequest { Text = "Check this out!", ImageUrl = "https://example.com/image.jpg" };
-        
+
         SetupAuthenticatedUser("https://mastodon.social", "test-token");
 
         _imageServiceMock.Setup(i => i.DownloadImageAsync(request.ImageUrl))
             .ReturnsAsync(new byte[] { 0x89, 0x50, 0x4E, 0x47 });
-        
+
         _mastodonServiceMock.Setup(m => m.UploadMediaAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<byte[]>(), null))
             .ReturnsAsync("media-id");
-        
+
         _mastodonServiceMock.Setup(m => m.PostStatusAsync(It.IsAny<string>(), It.IsAny<string>(), "Check this out!", "media-id"))
             .ReturnsAsync(("status-id", "https://mastodon.social/@user/123"));
- 
+
         // Act
         var result = await CreateEndpoints().Post(_httpContextMock.Object, request);
- 
+
         // Assert
         Assert.NotNull(result);
     }
@@ -145,7 +145,7 @@ public class PostingEndpointsTests
     {
         // Arrange
         var request = new PostRequest { Text = "Check this out!", ImageUrl = "https://example.com/image.jpg" };
- 
+
         // Act
         // Assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => CreateEndpoints().Post(_httpContextMock.Object, request));

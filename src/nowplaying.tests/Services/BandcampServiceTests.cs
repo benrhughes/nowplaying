@@ -1,7 +1,6 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 using Microsoft.Extensions.Logging;
 using Moq;
-using NowPlaying.Models;
 using NowPlaying.Services;
 using Xunit;
 
@@ -111,8 +110,8 @@ public class BandcampServiceTests
         var result = await service.ScrapeAsync(url);
 
         // Assert
-        Assert.Equal("", result.Artist);
-        Assert.Equal("", result.Album);
+        Assert.Equal(string.Empty, result.Artist);
+        Assert.Equal(string.Empty, result.Album);
     }
 
     [Fact]
@@ -166,6 +165,7 @@ public class BandcampServiceTests
             {
                 response.Content = new StringContent(_content);
             }
+
             return Task.FromResult(response);
         }
     }

@@ -9,14 +9,29 @@ trim_trailing_whitespace = true
 insert_final_newline = true
 
 [*.cs]
-# Standard C# rules
+# Standard C# rules - Global
 dotnet_diagnostic.SA1309.severity = none # Underscore for fields
 dotnet_diagnostic.SA1200.severity = none # Using inside namespace
 dotnet_diagnostic.SA1101.severity = none # Use 'this.' prefix
 dotnet_diagnostic.SA1413.severity = none # Trailing comma
 dotnet_diagnostic.SA1206.severity = none # Modifier order (StyleCop doesn't handle 'required' well)
 dotnet_diagnostic.SA1313.severity = none # Parameter casing for records
+
+# Fixes for modern C# syntax (project-wide as these are language features)
+dotnet_diagnostic.SA1000.severity = none # new followed by space (target-typed new)
+dotnet_diagnostic.SA1009.severity = none # parenthesis space (primary constructors)
+dotnet_diagnostic.SA1024.severity = none # colon space (primary constructors)
+dotnet_diagnostic.SA1018.severity = none # nullable space
+
 dotnet_diagnostic.IDE0005.severity = error # Unused usings
+
+[src/nowplaying.tests/**.cs]
+# Relaxed rules for tests
+dotnet_diagnostic.SA0001.severity = none # Disable XML comment analysis in tests
+dotnet_diagnostic.SA1202.severity = none # public before private (often grouped by test case)
+dotnet_diagnostic.SA1203.severity = none # constant before fields
+dotnet_diagnostic.SA1107.severity = none # multiple statements on one line
+dotnet_diagnostic.SA1500.severity = none # braces on same line
 
 [src/nowplaying/Program.cs]
 dotnet_diagnostic.SA1516.severity = none

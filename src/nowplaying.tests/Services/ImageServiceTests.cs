@@ -1,10 +1,10 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
-using NowPlaying.Services;
+using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
+using NowPlaying.Services;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using Microsoft.Extensions.Logging;
+using Xunit;
 
 namespace NowPlaying.Tests.Services;
 
@@ -49,6 +49,7 @@ public class ImageServiceTests
         {
             await image.SaveAsJpegAsync(stream);
         }
+
         var imageBytes = stream.ToArray();
 
         var handler = new MockHttpMessageHandler(imageBytes);

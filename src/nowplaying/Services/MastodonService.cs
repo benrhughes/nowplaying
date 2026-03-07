@@ -2,7 +2,6 @@
 namespace NowPlaying.Services;
 
 using System.Net;
-using System.Text.Json;
 using NowPlaying.Extensions;
 using NowPlaying.Models;
 

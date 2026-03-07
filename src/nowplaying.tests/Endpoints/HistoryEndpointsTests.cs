@@ -26,23 +26,24 @@ public class HistoryEndpointsTests
         _imageServiceMock = new Mock<IImageService>();
         _loggerMock = new Mock<ILogger<HistoryEndpoints>>();
         _context = new DefaultHttpContext();
-        
+
         // Setup session
         var sessionMock = new Mock<ISession>();
         var sessionStore = new Dictionary<string, byte[]>();
-        
-        sessionMock.Setup(s => s.TryGetValue(It.IsAny<string>(), out It.Ref<byte[]?>.IsAny))
-            .Returns((string key, out byte[]? value) =>
+
+        sessionMock.Setup(s => s.TryGetValue(It.IsAny<string>(), out It.Ref<byte[] ?>.IsAny))
+            .Returns((string key, out byte[] ? value) =>
             {
                 if (sessionStore.TryGetValue(key, out var storedValue))
                 {
                     value = storedValue;
                     return true;
                 }
+
                 value = null;
                 return false;
             });
-            
+
         sessionMock.Setup(s => s.Set(It.IsAny<string>(), It.IsAny<byte[]>()))
             .Callback<string, byte[]>((key, value) => sessionStore[key] = value);
 
@@ -97,7 +98,7 @@ public class HistoryEndpointsTests
     {
         var request = new CompositeRequest { ImageUrls = new List<string>() };
         var result = await CreateEndpoints().Composite(request);
-        
+
         var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
         Assert.Equal("No images provided", badRequest.Value!.Error);
     }
@@ -130,7 +131,7 @@ public class HistoryEndpointsTests
     {
         // Arrange
         SetupAuthenticatedUser("https://mastodon.social", "token");
-        
+
         var formCollection = new FormCollection(
             new Dictionary<string, StringValues>
             {
@@ -138,7 +139,7 @@ public class HistoryEndpointsTests
                 { "text", "Test post" }
             },
             new FormFileCollection());
-        
+
         _context.Request.ContentType = "multipart/form-data";
         _context.Request.Form = formCollection;
 
@@ -160,14 +161,14 @@ public class HistoryEndpointsTests
 
         var imageStream = new MemoryStream(new byte[] { 1, 2, 3 });
         var formFile = new FormFile(imageStream, 0, imageStream.Length, "image", "test.jpg");
-        
+
         var formCollection = new FormCollection(
             new Dictionary<string, StringValues>
             {
                 { "altText", "Test alt text" }
             },
             new FormFileCollection { formFile });
-        
+
         _context.Request.ContentType = "multipart/form-data";
         _context.Request.Form = formCollection;
 
@@ -186,7 +187,7 @@ public class HistoryEndpointsTests
 
         var imageStream = new MemoryStream(new byte[] { 1, 2, 3 });
         var formFile = new FormFile(imageStream, 0, imageStream.Length, "image", "test.jpg");
-        
+
         var formCollection = new FormCollection(
             new Dictionary<string, StringValues>
             {
@@ -194,7 +195,7 @@ public class HistoryEndpointsTests
                 { "text", "Test post" }
             },
             new FormFileCollection { formFile });
-        
+
         _context.Request.ContentType = "multipart/form-data";
         _context.Request.Form = formCollection;
 
@@ -211,11 +212,11 @@ public class HistoryEndpointsTests
         // Assert
         var okResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
         Assert.NotNull(okResult.Value);
-        
+
         _mastodonServiceMock.Verify(
             x => x.UploadMediaAsync("https://mastodon.social", "token", It.IsAny<byte[]>(), "Test alt text"),
             Times.Once);
-        
+
         _mastodonServiceMock.Verify(
             x => x.PostStatusAsync("https://mastodon.social", "token", "Test post", "media-123"),
             Times.Once);
@@ -229,7 +230,7 @@ public class HistoryEndpointsTests
 
         var imageStream = new MemoryStream(new byte[] { 1, 2, 3 });
         var formFile = new FormFile(imageStream, 0, imageStream.Length, "image", "test.jpg");
-        
+
         var formCollection = new FormCollection(
             new Dictionary<string, StringValues>
             {
@@ -237,7 +238,7 @@ public class HistoryEndpointsTests
                 { "text", "Test post" }
             },
             new FormFileCollection { formFile });
-        
+
         _context.Request.ContentType = "multipart/form-data";
         _context.Request.Form = formCollection;
 
@@ -257,7 +258,7 @@ public class HistoryEndpointsTests
 
         var imageStream = new MemoryStream(new byte[] { 1, 2, 3 });
         var formFile = new FormFile(imageStream, 0, imageStream.Length, "image", "test.jpg");
-        
+
         var formCollection = new FormCollection(
             new Dictionary<string, StringValues>
             {
@@ -265,7 +266,7 @@ public class HistoryEndpointsTests
                 { "text", "Test post" }
             },
             new FormFileCollection { formFile });
-        
+
         _context.Request.ContentType = "multipart/form-data";
         _context.Request.Form = formCollection;
 

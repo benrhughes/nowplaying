@@ -61,7 +61,7 @@ public class CompositeRequest
     /// <summary>
     /// Gets or sets the URLs of the images to upload.
     /// </summary>
-    public List<string> ImageUrls { get; set; } = new ();
+    public List<string> ImageUrls { get; set; } = new();
 }
 
 /// <summary>
