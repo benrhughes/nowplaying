@@ -31,7 +31,7 @@ See [SETUP.md](SETUP.md) for detailed installation instructions.
 
 ##  Contributing
 
-PRs are welcome. Please not this is a GPL v3 licensed codebase and contributions will fall under than license. 
+PRs are welcome. Please note this is a AGPL v3 licensed codebase and contributions will fall under than license. 
 
 ## License
 
