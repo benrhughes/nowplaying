@@ -1,3 +1,4 @@
+// Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 namespace NowPlaying.Tests.Endpoints;
 
 using System.Security.Claims;
@@ -30,9 +31,8 @@ public class HistoryEndpointsTests
         var sessionMock = new Mock<ISession>();
         var sessionStore = new Dictionary<string, byte[]>();
         
-#pragma warning disable CS8601, CS8625
-        sessionMock.Setup(s => s.TryGetValue(It.IsAny<string>(), out It.Ref<byte[]>.IsAny))
-            .Returns((string key, out byte[] value) =>
+        sessionMock.Setup(s => s.TryGetValue(It.IsAny<string>(), out It.Ref<byte[]?>.IsAny))
+            .Returns((string key, out byte[]? value) =>
             {
                 if (sessionStore.TryGetValue(key, out var storedValue))
                 {
@@ -42,7 +42,6 @@ public class HistoryEndpointsTests
                 value = null;
                 return false;
             });
-#pragma warning restore CS8601, CS8625
             
         sessionMock.Setup(s => s.Set(It.IsAny<string>(), It.IsAny<byte[]>()))
             .Callback<string, byte[]>((key, value) => sessionStore[key] = value);
@@ -90,9 +89,7 @@ public class HistoryEndpointsTests
         // Assert
         // We use IValueHttpResult because we can't easily assert the generic type of Ok<List<AnonymousType>>
         var jsonResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
-#pragma warning disable CS8602
-        Assert.NotNull(jsonResult.Value);
-#pragma warning restore CS8602
+        Assert.NotNull(jsonResult!.Value);
     }
 
     [Fact]
@@ -102,9 +99,7 @@ public class HistoryEndpointsTests
         var result = await CreateEndpoints().Composite(request);
         
         var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
-#pragma warning disable CS8602
-        Assert.Equal("No images provided", badRequest.Value.Error);
-#pragma warning restore CS8602
+        Assert.Equal("No images provided", badRequest.Value!.Error);
     }
 
     [Fact]
@@ -154,9 +149,7 @@ public class HistoryEndpointsTests
 
         // Assert
         var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
-#pragma warning disable CS8602
-        Assert.Equal("No image provided", badRequest.Value.Error);
-#pragma warning restore CS8602
+        Assert.Equal("No image provided", badRequest.Value!.Error);
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+// Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Features;

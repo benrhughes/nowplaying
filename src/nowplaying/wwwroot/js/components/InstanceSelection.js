@@ -1,3 +1,4 @@
+// Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Component for selecting and registering a Mastodon instance.
  */

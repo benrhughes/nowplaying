@@ -1,3 +1,4 @@
+// Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 import Bandcamp from './components/Bandcamp.js';
 import History from './components/History.js';
 import InstanceSelection from './components/InstanceSelection.js';
@@ -70,6 +71,7 @@ export default {
                             <option value="dark">Dark</option>
                         </select>
                     </li>
+                </ul>
             </nav>
             </footer>
         </main>

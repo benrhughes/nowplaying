@@ -4,7 +4,7 @@ set -euo pipefail
 # Pre-commit hook: ensure SPDX header is present in staged files and add if missing.
 # Targets: .cs, .js, .ts, .jsx, .tsx, .css, .html
 
-SPDX_LINE="SPDX-License-Identifier: AGPL-3.0-or-later"
+SPDX_LINE="Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later"
 
 # Get staged files
 files=$(git diff --cached --name-only --diff-filter=ACM)

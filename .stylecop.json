@@ -6,7 +6,9 @@
       "documentExposedElements": true,
       "documentInternalElements": false,
       "documentPrivateElements": false,
-      "documentationCulture": "en-US"
+      "documentationCulture": "en-US",
+      "xmlHeader": false,
+      "copyrightText": "Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later"
     },
     "layoutRules": {
       "newlineAtEndOfFile": "require"

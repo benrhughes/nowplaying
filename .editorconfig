@@ -11,12 +11,12 @@ insert_final_newline = true
 [*.cs]
 # Standard C# rules
 dotnet_diagnostic.SA1309.severity = none # Underscore for fields
-dotnet_diagnostic.SA1633.severity = none # Missing file header
 dotnet_diagnostic.SA1200.severity = none # Using inside namespace
 dotnet_diagnostic.SA1101.severity = none # Use 'this.' prefix
 dotnet_diagnostic.SA1413.severity = none # Trailing comma
 dotnet_diagnostic.SA1206.severity = none # Modifier order (StyleCop doesn't handle 'required' well)
 dotnet_diagnostic.SA1313.severity = none # Parameter casing for records
+dotnet_diagnostic.IDE0005.severity = error # Unused usings
 
 [src/nowplaying/Program.cs]
 dotnet_diagnostic.SA1516.severity = none

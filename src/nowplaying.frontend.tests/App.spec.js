@@ -1,3 +1,4 @@
+// Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import App from '../nowplaying/wwwroot/js/App.js';
@@ -6,25 +7,18 @@ describe('App Component', () => {
   let wrapper;
 
   beforeEach(() => {
-    global.fetch = vi.fn();
-  });
-
-  it('renders the app with header and navigation', () => {
-    global.fetch.mockResolvedValueOnce({
+    global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ authenticated: false, registered: false, instance: null })
     });
+  });
 
+  it('renders the app with header and navigation', () => {
     wrapper = mount(App);
     expect(wrapper.find('h1').text()).toContain('NowPlaying');
   });
 
   it('initializes with unauthenticated state', () => {
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ authenticated: false, registered: false, instance: null })
-    });
-
     wrapper = mount(App);
 
     expect(wrapper.vm.authenticated).toBe(false);
@@ -65,7 +59,7 @@ describe('App Component', () => {
 
   it('handles fetch error gracefully', async () => {
     global.fetch.mockRejectedValueOnce(new Error('Network error'));
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
     wrapper = mount(App);
     await wrapper.vm.checkAuth();

@@ -1,3 +1,4 @@
+// Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 using NowPlaying.Endpoints;
 using NowPlaying.Models;
 using NowPlaying.Services;
@@ -8,8 +9,6 @@ using Moq;
 using Xunit;
 
 namespace NowPlaying.Tests.Endpoints;
-
-#pragma warning disable CS8601
 
 public class AuthenticationEndpointsTests
 {
@@ -50,8 +49,8 @@ public class AuthenticationEndpointsTests
     private void SetupSessionString(string key, string value)
     {
         var bytes = System.Text.Encoding.UTF8.GetBytes(value);
-        _sessionMock.Setup(s => s.TryGetValue(key, out It.Ref<byte[]>.IsAny))
-            .Returns((string k, out byte[] v) =>
+        _sessionMock.Setup(s => s.TryGetValue(key, out It.Ref<byte[]?>.IsAny))
+            .Returns((string k, out byte[]? v) =>
             {
                 v = bytes;
                 return true;
