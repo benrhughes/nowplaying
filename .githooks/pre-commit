@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Pre-commit hook: ensure SPDX header is present in staged files and add if missing.
+# Targets: .cs, .js, .ts, .jsx, .tsx, .css, .html
+
+SPDX_LINE="SPDX-License-Identifier: AGPL-3.0-or-later"
+
+# Get staged files
+files=$(git diff --cached --name-only --diff-filter=ACM)
+if [ -z "$files" ]; then
+  exit 0
+fi
+
+for f in $files; do
+  ext="${f##*.}"
+  # Only process certain extensions
+  case "$ext" in
+    cs|js|ts|jsx|tsx|css|html)
+      if [ ! -f "$f" ]; then
+        continue
+      fi
+
+      # Check if SPDX line already present
+      if grep -q "$SPDX_LINE" "$f"; then
+        continue
+      fi
+
+      tmp=$(mktemp)
+
+      case "$ext" in
+        cs|js|ts|jsx|tsx)
+          # Single-line comment style
+          echo "// $SPDX_LINE" > "$tmp"
+          cat "$f" >> "$tmp"
+          ;;
+        css)
+          # Block comment for css
+          echo "/* $SPDX_LINE */" > "$tmp"
+          cat "$f" >> "$tmp"
+          ;;
+        html)
+          # For HTML, if there's a DOCTYPE on first line, insert after it; otherwise prepend
+          firstline=$(sed -n '1p' "$f" || true)
+          if echo "$firstline" | grep -iq "<!DOCTYPE"; then
+            echo "$firstline" > "$tmp"
+            echo "<!-- $SPDX_LINE -->" >> "$tmp"
+            sed -n '2,$p' "$f" >> "$tmp"
+          else
+            echo "<!-- $SPDX_LINE -->" > "$tmp"
+            cat "$f" >> "$tmp"
+          fi
+          ;;
+      esac
+
+      # Replace original file
+      mv "$tmp" "$f"
+      # Re-stage file
+      git add "$f"
+      ;;
+    *)
+      # skip other files (e.g., json) as comments may be invalid
+      ;;
+  esac
+done
+
+exit 0
