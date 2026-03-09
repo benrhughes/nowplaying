@@ -54,28 +54,24 @@ public record CompositeResponse(string CacheId, string ContentType);
 /// <param name="Instance">The Mastodon instance registered with.</param>
 public record RegistrationResponse(bool Success, string Instance);
 
+/// <summary>
+/// A single item in the listening history search result.
+/// </summary>
+/// <param name="PostId">The ID of the Mastodon post.</param>
+/// <param name="CreatedAt">The date and time the post was created.</param>
+/// <param name="ImageUrl">The URL of the image attached to the post.</param>
+/// <param name="AltText">The extracted alt text from the post content.</param>
+public record HistorySearchResponse(string PostId, DateTimeOffset? CreatedAt, string? ImageUrl, string? AltText);
+
 // Internal models for Mastodon API
 /// <summary>
 /// Internal response for application registration.
 /// </summary>
-internal record AppRegistrationResponse(
-    string? clientId = null,
-    string? clientSecret = null,
-    string? id = null,
-    string? name = null)
-{
-    /// <summary>
-    /// Gets or sets the client ID.
-    /// </summary>
-    [System.Text.Json.Serialization.JsonPropertyName("client_id")]
-    public string? Client_id { get; set; }
-
-    /// <summary>
-    /// Gets or sets the client secret.
-    /// </summary>
-    [System.Text.Json.Serialization.JsonPropertyName("client_secret")]
-    public string? Client_secret { get; set; }
-}
+public record AppRegistrationResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("client_id")] string? ClientId = null,
+    [property: System.Text.Json.Serialization.JsonPropertyName("client_secret")] string? ClientSecret = null,
+    [property: System.Text.Json.Serialization.JsonPropertyName("id")] string? Id = null,
+    [property: System.Text.Json.Serialization.JsonPropertyName("name")] string? Name = null);
 
 /// <summary>
 /// Internal response for media upload.

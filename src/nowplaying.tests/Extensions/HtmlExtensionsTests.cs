@@ -151,4 +151,17 @@ public class HtmlExtensionsTests
 
         Assert.Equal("Metallica - Master of Puppets", result);
     }
+
+    /// <summary>
+    /// Verifies that a default value is returned when the input contains only tags that result in no text.
+    /// </summary>
+    [Fact]
+    public void ExtractFirstLineAsAltText_WithOnlyTags_ReturnsDefault()
+    {
+        var html = "<p></p><br/>";
+
+        var result = html.ExtractFirstLineAsAltText();
+
+        Assert.Equal("Album cover", result);
+    }
 }

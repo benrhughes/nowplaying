@@ -33,8 +33,8 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
         }
 
         var data = await response.Content.ReadAsAsync<AppRegistrationResponse>();
-        var clientId = data?.Client_id ?? throw new InvalidOperationException("No client_id in response");
-        var clientSecret = data?.Client_secret ?? throw new InvalidOperationException("No client_secret in response");
+        var clientId = data?.ClientId ?? throw new InvalidOperationException("No client_id in response");
+        var clientSecret = data?.ClientSecret ?? throw new InvalidOperationException("No client_secret in response");
 
         return (clientId, clientSecret);
     }

@@ -1,6 +1,7 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NowPlaying.Endpoints;
@@ -87,7 +88,9 @@ public class AuthenticationEndpointsTests
         var result = CreateEndpoints().Login(_httpContextMock.Object, "https://mastodon.social");
 
         // Assert
-        Assert.NotNull(result);
+        var redirectResult = Assert.IsType<RedirectHttpResult>(result);
+        Assert.Contains("mastodon.social/oauth/authorize", redirectResult.Url);
+        Assert.Contains("client_id=client-id", redirectResult.Url);
     }
 
     /// <summary>
@@ -102,10 +105,11 @@ public class AuthenticationEndpointsTests
             .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", "client-secret", "http://localhost:3000/auth/callback"); return true; });
 
         // Act
-        var result = CreateEndpoints().Login(_httpContextMock.Object, "https://mastodon.social");
+        var result2 = CreateEndpoints().Login(_httpContextMock.Object, "https://mastodon.social");
 
         // Assert
-        Assert.NotNull(result);
+        var redirectResult2 = Assert.IsType<RedirectHttpResult>(result2);
+        Assert.Contains("mastodon.social/oauth/authorize", redirectResult2.Url);
     }
 
     /// <summary>
@@ -118,7 +122,8 @@ public class AuthenticationEndpointsTests
         var result = CreateEndpoints().Login(_httpContextMock.Object, null);
 
         // Assert
-        Assert.NotNull(result);
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Equal("Instance not configured. Please select an instance first.", badRequest.Value!.Error);
     }
 
     /// <summary>
@@ -137,7 +142,8 @@ public class AuthenticationEndpointsTests
         var result = CreateEndpoints().Login(_httpContextMock.Object, "https://mastodon.social");
 
         // Assert
-        Assert.NotNull(result);
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Equal("Instance not registered. Please register your instance first.", badRequest.Value!.Error);
     }
 
     /// <summary>
@@ -148,6 +154,7 @@ public class AuthenticationEndpointsTests
     public async Task Callback_WithValidCode_ReturnsResult()
     {
         // Arrange
+        SetupSessionString("instance", "https://mastodon.social");
         SetupSessionString("oauth_state", "valid_state");
         _registrationStoreMock.Setup(r => r.TryGet("https://mastodon.social", out It.Ref<RegistrationInfo?>.IsAny))
             .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", "client-secret", "http://localhost:3000/auth/callback"); return true; });
@@ -166,7 +173,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "valid_state");
 
         // Assert
-        Assert.NotNull(result);
+        var redirectResult = Assert.IsType<RedirectHttpResult>(result);
+        Assert.Equal("/", redirectResult.Url);
     }
 
     /// <summary>
@@ -180,7 +188,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, null, "state");
 
         // Assert
-        Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.BadRequest<ErrorResponse>>(result);
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Equal("No authorization code provided", badRequest.Value!.Error);
     }
 
     /// <summary>
@@ -197,7 +206,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "code", null);
 
         // Assert
-        Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.BadRequest<ErrorResponse>>(result);
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Equal("Invalid state parameter (CSRF protection)", badRequest.Value!.Error);
     }
 
     /// <summary>
@@ -214,7 +224,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "state");
 
         // Assert
-        Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.BadRequest<ErrorResponse>>(result);
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Equal("Session invalid. Please start the login process again.", badRequest.Value!.Error);
     }
 
     /// <summary>
@@ -276,7 +287,7 @@ public class AuthenticationEndpointsTests
     public async Task Callback_WithServiceError_ReturnsBadRequest()
     {
         // Arrange
-        SetupSessionString("instance", "mastodon.social");
+        SetupSessionString("instance", "https://mastodon.social");
         SetupSessionString("oauth_state", "state");
         _registrationStoreMock.Setup(r => r.TryGet("https://mastodon.social", out It.Ref<RegistrationInfo?>.IsAny))
             .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", "client-secret", "http://localhost:3000/auth/callback"); return true; });
@@ -305,7 +316,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "wrong_state");
 
         // Assert
-        Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.BadRequest<ErrorResponse>>(result);
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Equal("Invalid state parameter (CSRF protection)", badRequest.Value!.Error);
     }
 
     /// <summary>
@@ -316,7 +328,7 @@ public class AuthenticationEndpointsTests
     public async Task Callback_WithGeneralException_Returns500()
     {
         // Arrange
-        SetupSessionString("instance", "mastodon.social");
+        SetupSessionString("instance", "https://mastodon.social");
         SetupSessionString("oauth_state", "state");
         _registrationStoreMock.Setup(r => r.TryGet("https://mastodon.social", out It.Ref<RegistrationInfo?>.IsAny))
             .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", "client-secret", "http://localhost:3000/auth/callback"); return true; });
@@ -349,7 +361,9 @@ public class AuthenticationEndpointsTests
         var result = CreateEndpoints().Status(_httpContextMock.Object);
 
         // Assert
-        Assert.NotNull(result);
+        var okResult = Assert.IsType<Ok<StatusResponse>>(result);
+        Assert.True(okResult.Value!.Authenticated);
+        Assert.Equal("https://mastodon.social", okResult.Value.Instance);
     }
 
     /// <summary>
@@ -368,7 +382,9 @@ public class AuthenticationEndpointsTests
         var result = CreateEndpoints().Status(_httpContextMock.Object);
 
         // Assert
-        Assert.NotNull(result);
+        var okResult = Assert.IsType<Ok<StatusResponse>>(result);
+        Assert.False(okResult.Value!.Authenticated);
+        Assert.Equal("mastodon.social", okResult.Value.Instance);
     }
 
     /// <summary>
@@ -386,7 +402,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Logout(_httpContextMock.Object);
 
         // Assert
-        Assert.NotNull(result);
+        var redirectResult = Assert.IsType<RedirectHttpResult>(result);
+        Assert.Equal("/", redirectResult.Url);
         _sessionMock.Verify(s => s.Clear(), Times.Once);
     }
 
@@ -406,7 +423,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Register(_httpContextMock.Object, request);
 
         // Assert
-        Assert.NotNull(result);
+        var okResult = Assert.IsType<Ok<RegistrationResponse>>(result);
+        Assert.True(okResult.Value!.Success);
         _registrationStoreMock.Verify(r => r.Add("https://mastodon.social", "client-id", "client-secret", _config.RedirectUri), Times.Once);
     }
 
@@ -424,7 +442,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Register(_httpContextMock.Object, request);
 
         // Assert
-        Assert.NotNull(result);
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.NotNull(badRequest.Value!.Error);
     }
 
     /// <summary>
@@ -443,7 +462,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Register(_httpContextMock.Object, request);
 
         // Assert
-        Assert.NotNull(result);
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Contains("Failed to register", badRequest.Value!.Error);
     }
 
     /// <summary>
@@ -462,7 +482,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Register(_httpContextMock.Object, request);
 
         // Assert
-        Assert.NotNull(result);
+        var statusCodeResult = Assert.IsType<StatusCodeHttpResult>(result);
+        Assert.Equal(StatusCodes.Status500InternalServerError, statusCodeResult.StatusCode);
     }
 
     /// <summary>
@@ -476,7 +497,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, string.Empty, "state");
 
         // Assert
-        Assert.NotNull(result);
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Equal("No authorization code provided", badRequest.Value!.Error);
     }
 
     /// <summary>
@@ -497,7 +519,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "state");
 
         // Assert
-        Assert.NotNull(result);
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Contains("Registration info missing", badRequest.Value!.Error);
     }
 
     /// <summary>
@@ -508,7 +531,7 @@ public class AuthenticationEndpointsTests
     public async Task Callback_WithNullAccessToken_HandlesGracefully()
     {
         // Arrange
-        SetupSessionString("instance", "mastodon.social");
+        SetupSessionString("instance", "https://mastodon.social");
         SetupSessionString("oauth_state", "valid_state");
         _registrationStoreMock.Setup(r => r.TryGet("https://mastodon.social", out It.Ref<RegistrationInfo?>.IsAny))
             .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", "client-secret", "http://localhost:3000/auth/callback"); return true; });
@@ -526,7 +549,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "valid_state");
 
         // Assert
-        Assert.NotNull(result);
+        var redirectResult = Assert.IsType<RedirectHttpResult>(result);
+        Assert.Equal("/", redirectResult.Url);
     }
 
     /// <summary>
@@ -537,7 +561,7 @@ public class AuthenticationEndpointsTests
     public async Task Callback_WithVerifyCredentialsError_ReturnsBadRequest()
     {
         // Arrange
-        SetupSessionString("instance", "mastodon.social");
+        SetupSessionString("instance", "https://mastodon.social");
         SetupSessionString("oauth_state", "state");
         _registrationStoreMock.Setup(r => r.TryGet("https://mastodon.social", out It.Ref<RegistrationInfo?>.IsAny))
             .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", "client-secret", "http://localhost:3000/auth/callback"); return true; });
@@ -552,23 +576,7 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "state");
 
         // Assert
-        Assert.NotNull(result);
-    }
-
-    /// <summary>
-    /// Verifies that Callback returns a bad request result when the state is null.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task Callback_WithNullState_ReturnsBadRequest()
-    {
-        // Arrange
-        SetupSessionString("oauth_state", "valid_state");
-
-        // Act
-        var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", null);
-
-        // Assert
-        Assert.NotNull(result);
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Contains("Verification failed", badRequest.Value!.Error);
     }
 }

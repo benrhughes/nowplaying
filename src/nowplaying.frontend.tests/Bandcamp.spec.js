@@ -38,7 +38,10 @@ describe('Bandcamp Component', () => {
         '/api/posting/scrape',
         expect.anything()
     );
-    expect(wrapper.vm.scrapedData).toBeTruthy();
+    expect(wrapper.vm.scrapedData).toEqual(expect.objectContaining({
+        artist: 'Artist',
+        album: 'Album'
+    }));
     expect(wrapper.findComponent({ name: 'MastodonPost' }).exists()).toBe(true);
   });
 

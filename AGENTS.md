@@ -21,7 +21,8 @@
 
 ## 🧪 Testing
 - **Framework**: xUnit and Moq.
-- **Coverage**: ALWAYS add unit test coverage for new code changes in the `bcmasto.tests` project and strive to keep overall coverage above **80 %**.  After running `dotnet test` you can generate a report with:
+- **Quality**: Tests should assert of meaningful outcomes, not just null checks or counts.
+- **Coverage**: ALWAYS add unit test coverage for new code changes in the and strive to keep overall coverage above **90%**.  After running `dotnet test` you can generate a report with:
   ```bash
   cd src
   dotnet test nowplaying.tests/nowplaying.tests.csproj --collect:"XPlat Code Coverage" --settings .runsettings

@@ -1,7 +1,18 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-
 WORKDIR /src
 
+# frontend tests stage
+FROM node:22-slim AS frontend-tests
+WORKDIR /app
+COPY package.json package-lock.json vitest.config.js ./
+COPY src/nowplaying/wwwroot/js ./src/nowplaying/wwwroot/js
+COPY src/nowplaying.frontend.tests ./src/nowplaying.frontend.tests
+RUN npm ci && npm test -- --run
+
+FROM build AS dotnet-build
+# Ensure frontend tests pass before proceeding
+COPY --from=frontend-tests /app/package.json /tmp/package.json
+WORKDIR /src
 # optional test run can be skipped in constrained environments (xunit.analyzers often fails in containers)
 ARG RUN_TESTS=false
 
@@ -31,7 +42,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 
 # Copy published application
-COPY --from=build /app/publish .
+COPY --from=dotnet-build /app/publish .
 
 # Create non-root user for security
 RUN useradd -m -u 10001 appuser && \

@@ -89,4 +89,24 @@ public class ResponseModelsTests
         Assert.True(response.Success);
         Assert.Equal("mastodon.social", response.Instance);
     }
+
+    /// <summary>
+    /// Verifies that AppRegistrationResponse correctly stores all properties.
+    /// </summary>
+    [Fact]
+    public void AppRegistrationResponse_CreatesWithAllProperties()
+    {
+        // Arrange & Act
+        var response = new AppRegistrationResponse(
+            ClientId: "client-123",
+            ClientSecret: "secret-456",
+            Id: "id-789",
+            Name: "app-name");
+
+        // Assert
+        Assert.Equal("client-123", response.ClientId);
+        Assert.Equal("secret-456", response.ClientSecret);
+        Assert.Equal("id-789", response.Id);
+        Assert.Equal("app-name", response.Name);
+    }
 }

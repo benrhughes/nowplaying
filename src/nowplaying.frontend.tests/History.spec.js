@@ -38,6 +38,8 @@ describe('History Component', () => {
         '/api/history/search?since=2025-01-01&until=2025-01-07&tag=%23nowplaying'
     );
     expect(wrapper.vm.posts).toHaveLength(1);
+    expect(wrapper.vm.posts[0].postId).toBe('1');
+    expect(wrapper.vm.posts[0].imageUrl).toBe('img1.jpg');
   });
 
   it('generates composite and shows MastodonPost when Share clicked', async () => {
@@ -64,7 +66,8 @@ describe('History Component', () => {
 
     // The "Share to Mastodon" button is shown when compositeUrl is present
     const shareBtn = wrapper.findAll('button').find(b => b.text().includes('Share to Mastodon'));
-    expect(shareBtn).toBeDefined();
+    expect(shareBtn).toBeTruthy();
+    expect(shareBtn.isVisible()).toBe(true);
     await shareBtn.trigger('click');
 
     expect(wrapper.vm.showPostForm).toBe(true);

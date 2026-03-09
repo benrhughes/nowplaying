@@ -80,11 +80,11 @@ public class ServiceCollectionExtensionsTests
         services.AddSingleton<IWebHostEnvironment>(envMock.Object);
 
         // This exercises the production branch of the session configuration
-        services.AddServices(config, envMock.Object);
+        var provider = services.AddServices(config, envMock.Object).BuildServiceProvider();
 
-        // No easy way to assert the internal session options without building and capturing,
-        // but this ensures the code path is hit.
-        Assert.True(true);
+        // Verify session cookie policy is set to Always in production
+        var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Builder.SessionOptions>>();
+        Assert.Equal(Microsoft.AspNetCore.Http.CookieSecurePolicy.Always, options.Value.Cookie.SecurePolicy);
     }
 
     /// <summary>

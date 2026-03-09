@@ -90,7 +90,11 @@ public class PostingEndpointsTests
         var result = await CreateEndpoints().Scrape(_httpContextMock.Object, request);
 
         // Assert
-        Assert.NotNull(result);
+        var okResult = Assert.IsType<Ok<ScrapeResponse>>(result);
+        Assert.NotNull(okResult.Value);
+        Assert.Equal("Test Artist", okResult.Value.Artist);
+        Assert.Equal("Test Album", okResult.Value.Album);
+        Assert.Equal("https://example.com/image.jpg", okResult.Value.Image);
     }
 
     /// <summary>
@@ -130,11 +134,11 @@ public class PostingEndpointsTests
     }
 
     /// <summary>
-    /// Verifies that Scrape returns a result even for non-Bandcamp URLs.
+    /// Verifies that Scrape returns a bad request for non-Bandcamp URLs.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
-    public async Task Scrape_WithNonBandcampUrl_ReturnsResult()
+    public async Task Scrape_WithNonBandcampUrl_ReturnsBadRequest()
     {
         // Arrange
         var request = new ScrapeRequest { Url = "https://spotify.com/album/test" };
@@ -143,7 +147,8 @@ public class PostingEndpointsTests
         var result = await CreateEndpoints().Scrape(_httpContextMock.Object, request);
 
         // Assert
-        Assert.NotNull(result);
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Equal("Only Bandcamp URLs are supported", badRequest.Value!.Error);
     }
 
     /// <summary>

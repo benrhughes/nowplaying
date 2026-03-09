@@ -112,9 +112,12 @@ public class HistoryEndpointsTests
         var result = await CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now.AddDays(-1), Until = DateTime.Now, Tag = "nowplaying" });
 
         // Assert
-        // We use IValueHttpResult because we can't easily assert the generic type of Ok<List<AnonymousType>>
-        var jsonResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
-        Assert.NotNull(jsonResult!.Value);
+        var okResult = Assert.IsType<Ok<List<HistorySearchResponse>>>(result);
+        Assert.NotNull(okResult.Value);
+        Assert.Single(okResult.Value);
+        var post = okResult.Value[0];
+        Assert.Equal("1", post.PostId);
+        Assert.Equal("img.jpg", post.ImageUrl);
     }
 
     /// <summary>
@@ -158,8 +161,10 @@ public class HistoryEndpointsTests
         var result = await CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now.AddDays(-1), Until = DateTime.Now, Tag = "nowplaying" });
 
         // Assert
-        var jsonResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
-        Assert.NotNull(jsonResult!.Value);
+        var okResult = Assert.IsType<Ok<List<HistorySearchResponse>>>(result);
+        Assert.NotNull(okResult.Value);
+        Assert.Single(okResult.Value);
+        Assert.Equal("real-url.jpg", okResult.Value[0].ImageUrl);
     }
 
     /// <summary>

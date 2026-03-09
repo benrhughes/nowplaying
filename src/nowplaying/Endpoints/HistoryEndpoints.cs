@@ -39,13 +39,11 @@ public class HistoryEndpoints(
 
             var images = posts
                 .Where(p => p.MediaAttachments != null && p.MediaAttachments.Count > 0)
-                .Select(p => new
-                {
-                    PostId = p.id,
-                    CreatedAt = p.CreatedAt,
-                    ImageUrl = p.MediaAttachments![0].preview_url ?? p.MediaAttachments![0].url,
-                    AltText = p.content.ExtractFirstLineAsAltText(),
-                })
+                .Select(p => new HistorySearchResponse(
+                    p.id,
+                    p.CreatedAt,
+                    p.MediaAttachments![0].preview_url ?? p.MediaAttachments![0].url,
+                    p.content.ExtractFirstLineAsAltText()))
                 .ToList();
 
             return Results.Ok(images);

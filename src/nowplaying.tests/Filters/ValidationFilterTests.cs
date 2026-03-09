@@ -3,6 +3,7 @@ namespace NowPlaying.Tests.Filters;
 
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Moq;
 using NowPlaying.Filters;
 using Xunit;
@@ -73,8 +74,11 @@ public class ValidationFilterTests
         // Assert
         Assert.False(nextCalled);
 
-        // Minimal API Results.ValidationProblem returns a ProblemHttpResult or similar
-        Assert.NotNull(result);
+        // Minimal API Results.ValidationProblem returns a ProblemHttpResult
+        var problemResult = Assert.IsType<ProblemHttpResult>(result);
+        Assert.Equal(StatusCodes.Status400BadRequest, problemResult.StatusCode);
+        var problemDetails = Assert.IsType<HttpValidationProblemDetails>(problemResult.ProblemDetails);
+        Assert.Contains("Name", problemDetails.Errors.Keys);
     }
 
     /// <summary>
