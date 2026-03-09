@@ -7,11 +7,9 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
 
     steps:
     - uses: actions/checkout@v4
@@ -24,7 +22,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22'
         cache: 'npm'
 
     - name: Install dependencies (Frontend)
@@ -61,8 +59,34 @@ jobs:
         echo "### Frontend Test Results" >> $GITHUB_STEP_SUMMARY
         npm run test:coverage | tee -a $GITHUB_STEP_SUMMARY
 
+    - name: Upload Backend Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: backend-test-results
+        path: src/nowplaying.tests/TestResults/test-results.trx
+
+    - name: Upload Coverage Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports
+        path: |
+          src/nowplaying.tests/TestResults/*/coverage.cobertura.xml
+          coverage/
+
+  publish:
+    name: Publish Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v4
+
     - name: Log in to the Container registry
-      if: github.event_name != 'pull_request'
+      if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
@@ -83,21 +107,6 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        push: ${{ github.event_name != 'pull_request' }}
+        push: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-
-    - name: Upload Backend Test Results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: backend-test-results
-        path: src/nowplaying.tests/TestResults/test-results.trx
-
-    - name: Upload Coverage Reports
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-reports
-        path: |
-          src/nowplaying.tests/TestResults/*/coverage.cobertura.xml
-          coverage/
