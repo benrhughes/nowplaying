@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json package-lock.json vitest.config.js ./
 COPY src/nowplaying/wwwroot/js ./src/nowplaying/wwwroot/js
 COPY src/nowplaying.frontend.tests ./src/nowplaying.frontend.tests
-RUN npm ci && npm test -- --run
+RUN npm ci && npm test
 
 FROM build AS dotnet-build
 # Ensure frontend tests pass before proceeding
