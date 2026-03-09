@@ -54,4 +54,49 @@ describe('Bandcamp Component', () => {
     expect(wrapper.vm.scrapedData).toBeNull();
     expect(wrapper.text()).toContain('Post a Bandcamp Album');
   });
+
+  it('shows error message on scrape failure', async () => {
+    global.fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ error: 'Invalid URL' })
+    });
+
+    wrapper = mount(Bandcamp);
+    wrapper.vm.url = 'not-a-url';
+    await wrapper.vm.scrape();
+
+    expect(wrapper.vm.error).toBe('Invalid URL');
+    expect(wrapper.text()).toContain('Invalid URL');
+  });
+
+  it('emits unauthorized when MastodonPost emits unauthorized', async () => {
+    wrapper = mount(Bandcamp);
+    wrapper.vm.scrapedData = { artist: 'A' };
+    await wrapper.vm.$nextTick();
+
+    const postComponent = wrapper.findComponent({ name: 'MastodonPost' });
+    postComponent.vm.$emit('unauthorized');
+
+    expect(wrapper.emitted('unauthorized')).toBeTruthy();
+  });
+
+  it('resets after successful post', async () => {
+    wrapper = mount(Bandcamp);
+    wrapper.vm.scrapedData = { artist: 'A' };
+    wrapper.vm.url = 'http://bc.com';
+    await wrapper.vm.$nextTick();
+
+    const postComponent = wrapper.findComponent({ name: 'MastodonPost' });
+    postComponent.vm.$emit('posted');
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.scrapedData).toBeNull();
+    expect(wrapper.vm.url).toBe('');
+  });
+
+  it('updatePreview does nothing if no scrapedData', () => {
+    wrapper = mount(Bandcamp);
+    wrapper.vm.updatePreview();
+    expect(wrapper.vm.altText).toBe('');
+  });
 });

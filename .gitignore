@@ -53,6 +53,8 @@ yarn-error.log*
 # Test results
 **/TestResults/
 *.trx
+coverage/
+**/coverage/
 
 # OS / IDE
 .DS_Store

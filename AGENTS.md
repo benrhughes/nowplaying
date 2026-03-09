@@ -32,7 +32,11 @@
   ```
   Tools like [ReportGenerator](https://github.com/danielpalme/ReportGenerator) or `coverlet`’s CLI can convert the XML into readable HTML.  Review metrics before merging changes.
 - **Mocks**: When testing services that use `HttpClient`, use `MockHttpMessageHandler` and a real `HttpClient` instance rather than mocking `IHttpClientFactory`.
-- **Frontend Tests**: Run `npm test -- --run` (NOT just `npm test`) to exit cleanly after tests complete. Without `--run`, vitest stays in watch mode and will hang.
+- **Frontend Tests**: Run `npm test -- --run` (NOT just `npm test`) to exit cleanly after tests complete. Without `--run`, vitest stays in watch mode and will hang. To check frontend coverage, run:
+  ```bash
+  npm run test:coverage -- --run
+  # results are written to coverage/index.html
+  ```
 
 ## 📖 Related Documentation
 - **Onboarding**: Read [SETUP.md](SETUP.md) for environment configuration.

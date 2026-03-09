@@ -170,17 +170,34 @@ public class AuthenticationEndpointsTests
     }
 
     /// <summary>
-    /// Verifies that Callback returns a result even when the authorization code is null.
+    /// Verifies that Callback returns a bad request result when the authorization code is null.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
-    public async Task Callback_WithNullCode_ReturnsResult()
+    public async Task Callback_WithNullCode_ReturnsBadRequest()
     {
         // Arrange & Act
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, null, "state");
 
         // Assert
-        Assert.NotNull(result);
+        Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.BadRequest<ErrorResponse>>(result);
+    }
+
+    /// <summary>
+    /// Verifies that Callback returns a bad request result when the state is null.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task Callback_WithNullState_ReturnsBadRequest()
+    {
+        // Arrange
+        SetupSessionString("oauth_state", "some_state");
+
+        // Act
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, "code", null);
+
+        // Assert
+        Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.BadRequest<ErrorResponse>>(result);
     }
 
     /// <summary>
@@ -188,7 +205,7 @@ public class AuthenticationEndpointsTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
-    public async Task Callback_WithMissingInstance_ReturnsResult()
+    public async Task Callback_WithMissingInstance_ReturnsBadRequest()
     {
         // Arrange
         SetupSessionString("oauth_state", "state");
@@ -197,7 +214,7 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "state");
 
         // Assert
-        Assert.NotNull(result);
+        Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.BadRequest<ErrorResponse>>(result);
     }
 
     /// <summary>
@@ -205,7 +222,7 @@ public class AuthenticationEndpointsTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
-    public async Task Callback_WithMissingClientId_ReturnsResult()
+    public async Task Callback_WithMissingClientId_ReturnsBadRequest()
     {
         // Arrange
         SetupSessionString("instance", "mastodon.social");
@@ -218,7 +235,7 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "state");
 
         // Assert
-        Assert.NotNull(result);
+        Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.BadRequest<ErrorResponse>>(result);
     }
 
     /// <summary>
@@ -226,7 +243,7 @@ public class AuthenticationEndpointsTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
-    public async Task Callback_WithMissingClientSecret_ReturnsResult()
+    public async Task Callback_WithMissingClientSecret_ReturnsRedirect()
     {
         // Arrange
         SetupSessionString("instance", "mastodon.social");
@@ -236,11 +253,19 @@ public class AuthenticationEndpointsTests
         _registrationStoreMock.Setup(r => r.TryGet(It.IsAny<string>(), out It.Ref<RegistrationInfo?>.IsAny))
             .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", null!, "http://localhost:3000/auth/callback"); return true; });
 
+        _mastodonServiceMock.Setup(m => m.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync("token");
+        _mastodonServiceMock.Setup(m => m.VerifyCredentialsAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync("user-id");
+
+        _authServiceMock.Setup(a => a.SignInAsync(It.IsAny<HttpContext>(), It.IsAny<string>(), It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<Microsoft.AspNetCore.Authentication.AuthenticationProperties>()))
+            .Returns(Task.CompletedTask);
+
         // Act
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "state");
 
         // Assert
-        Assert.NotNull(result);
+        Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.RedirectHttpResult>(result);
     }
 
     /// <summary>
@@ -248,7 +273,7 @@ public class AuthenticationEndpointsTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
-    public async Task Callback_WithServiceError_ReturnsResult()
+    public async Task Callback_WithServiceError_ReturnsBadRequest()
     {
         // Arrange
         SetupSessionString("instance", "mastodon.social");
@@ -263,7 +288,7 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "state");
 
         // Assert
-        Assert.NotNull(result);
+        Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.BadRequest<ErrorResponse>>(result);
     }
 
     /// <summary>
@@ -280,7 +305,7 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "wrong_state");
 
         // Assert
-        Assert.NotNull(result);
+        Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.BadRequest<ErrorResponse>>(result);
     }
 
     /// <summary>
@@ -303,7 +328,8 @@ public class AuthenticationEndpointsTests
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "state");
 
         // Assert
-        Assert.NotNull(result);
+        Assert.IsType<Microsoft.AspNetCore.Http.HttpResults.StatusCodeHttpResult>(result);
+        Assert.Equal(StatusCodes.Status500InternalServerError, ((Microsoft.AspNetCore.Http.HttpResults.StatusCodeHttpResult)result).StatusCode);
     }
 
     /// <summary>
