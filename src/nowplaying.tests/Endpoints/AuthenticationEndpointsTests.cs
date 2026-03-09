@@ -1,6 +1,5 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -11,6 +10,9 @@ using Xunit;
 
 namespace NowPlaying.Tests.Endpoints;
 
+/// <summary>
+/// Unit tests for the <see cref="AuthenticationEndpoints"/> class.
+/// </summary>
 public class AuthenticationEndpointsTests
 {
     private readonly Mock<IMastodonService> _mastodonServiceMock;
@@ -21,6 +23,9 @@ public class AuthenticationEndpointsTests
     private readonly Mock<ILogger<AuthenticationEndpoints>> _loggerMock;
     private readonly AppConfig _config;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthenticationEndpointsTests"/> class.
+    /// </summary>
     public AuthenticationEndpointsTests()
     {
         _mastodonServiceMock = new Mock<IMastodonService>();
@@ -45,8 +50,17 @@ public class AuthenticationEndpointsTests
         };
     }
 
+    /// <summary>
+    /// Creates a new instance of <see cref="AuthenticationEndpoints"/>.
+    /// </summary>
+    /// <returns>A new <see cref="AuthenticationEndpoints"/> instance.</returns>
     private AuthenticationEndpoints CreateEndpoints() => new(_mastodonServiceMock.Object, _loggerMock.Object, _registrationStoreMock.Object, _config);
 
+    /// <summary>
+    /// Sets up a string value in the mock session.
+    /// </summary>
+    /// <param name="key">The session key.</param>
+    /// <param name="value">The session value.</param>
     private void SetupSessionString(string key, string value)
     {
         var bytes = System.Text.Encoding.UTF8.GetBytes(value);
@@ -58,6 +72,9 @@ public class AuthenticationEndpointsTests
             });
     }
 
+    /// <summary>
+    /// Verifies that Login returns a redirect result when an instance URL is in the session.
+    /// </summary>
     [Fact]
     public void Login_WithSessionInstance_ReturnsResult()
     {
@@ -73,6 +90,9 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Login returns a redirect result when an instance URL is provided as a parameter.
+    /// </summary>
     [Fact]
     public void Login_WithParameterInstance_ReturnsResult()
     {
@@ -88,6 +108,9 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Login returns a result even when the instance URL is missing.
+    /// </summary>
     [Fact]
     public void Login_WithMissingInstance_ReturnsResult()
     {
@@ -98,6 +121,9 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Login returns a result when the client ID is missing from the registration store.
+    /// </summary>
     [Fact]
     public void Login_WithMissingClientId_ReturnsResult()
     {
@@ -114,11 +140,14 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Callback returns a success result with a valid authorization code.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Callback_WithValidCode_ReturnsResult()
     {
         // Arrange
-        SetupSessionString("instance", "mastodon.social");
         SetupSessionString("oauth_state", "valid_state");
         _registrationStoreMock.Setup(r => r.TryGet("https://mastodon.social", out It.Ref<RegistrationInfo?>.IsAny))
             .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", "client-secret", "http://localhost:3000/auth/callback"); return true; });
@@ -140,6 +169,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Callback returns a result even when the authorization code is null.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Callback_WithNullCode_ReturnsResult()
     {
@@ -150,6 +183,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Callback returns a result when the instance URL is missing from the session.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Callback_WithMissingInstance_ReturnsResult()
     {
@@ -163,6 +200,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Callback returns a result when the client ID is missing from the session.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Callback_WithMissingClientId_ReturnsResult()
     {
@@ -180,6 +221,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Callback returns a result when the client secret is missing from the session.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Callback_WithMissingClientSecret_ReturnsResult()
     {
@@ -198,6 +243,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Callback handles service errors gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Callback_WithServiceError_ReturnsResult()
     {
@@ -217,6 +266,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Callback returns a bad request result when the state is invalid.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Callback_WithInvalidState_ReturnsBadRequest()
     {
@@ -230,6 +283,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Callback returns an internal server error result on general exceptions.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Callback_WithGeneralException_Returns500()
     {
@@ -249,6 +306,9 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Status returns the correct status when the user is authenticated.
+    /// </summary>
     [Fact]
     public void Status_WhenAuthenticated_ReturnsStatus()
     {
@@ -266,6 +326,9 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Status returns the correct status when the user is not authenticated.
+    /// </summary>
     [Fact]
     public void Status_WhenNotAuthenticated_ReturnsStatus()
     {
@@ -282,6 +345,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Logout clears the session and signs the user out.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Logout_ClearsSessionAndSignsOut()
     {
@@ -297,6 +364,10 @@ public class AuthenticationEndpointsTests
         _sessionMock.Verify(s => s.Clear(), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that Register returns a success result with a valid instance URL.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Register_WithValidInstance_ReturnsResult()
     {
@@ -313,6 +384,10 @@ public class AuthenticationEndpointsTests
         _registrationStoreMock.Verify(r => r.Add("https://mastodon.social", "client-id", "client-secret", _config.RedirectUri), Times.Once);
     }
 
+    /// <summary>
+    /// Verifies that Register returns a bad request result with an invalid instance URL.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Register_WithInvalidInstance_ReturnsBadRequest()
     {
@@ -326,6 +401,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Register returns a bad request result on service errors.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Register_WithServiceError_ReturnsBadRequest()
     {
@@ -341,6 +420,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Register returns an internal server error result on general exceptions.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Register_WithGeneralException_Returns500()
     {
@@ -356,6 +439,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Callback returns a bad request result with an empty authorization code.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Callback_WithEmptyCode_ReturnsBadRequest()
     {
@@ -366,6 +453,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Callback returns a bad request result when registration info is null.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Callback_WithRegistrationInfoNull_ReturnsBadRequest()
     {
@@ -383,6 +474,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Callback handles a null access token gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Callback_WithNullAccessToken_HandlesGracefully()
     {
@@ -408,6 +503,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Callback returns a bad request result when credential verification fails.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Callback_WithVerifyCredentialsError_ReturnsBadRequest()
     {
@@ -430,6 +529,10 @@ public class AuthenticationEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Callback returns a bad request result when the state is null.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Callback_WithNullState_ReturnsBadRequest()
     {

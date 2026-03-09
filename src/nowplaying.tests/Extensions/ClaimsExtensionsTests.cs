@@ -10,6 +10,9 @@ using Xunit;
 /// </summary>
 public class ClaimsExtensionsTests
 {
+    /// <summary>
+    /// Verifies that instance, access token, and user ID claims are correctly retrieved.
+    /// </summary>
     [Fact]
     public void GetInstance_AccessToken_UserId_ReturnValues()
     {
@@ -21,6 +24,9 @@ public class ClaimsExtensionsTests
         Assert.Equal("userid123", principal.GetUserId());
     }
 
+    /// <summary>
+    /// Verifies that retrieval methods return null when the principal is null or claims are missing.
+    /// </summary>
     [Fact]
     public void GetMethods_ReturnNull_WhenPrincipalIsNullOrClaimsMissing()
     {
@@ -35,6 +41,9 @@ public class ClaimsExtensionsTests
         Assert.Null(empty.GetUserId());
     }
 
+    /// <summary>
+    /// Verifies that CreateAuthenticationClaims produces the correct claim types and values.
+    /// </summary>
     [Fact]
     public void CreateAuthenticationClaims_ProducesCorrectClaimTypes()
     {

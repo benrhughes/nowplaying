@@ -168,6 +168,7 @@ public class UrlExtensionsTests
     /// <summary>
     /// Verifies that an invalid URL format throws ArgumentException.
     /// </summary>
+    /// <param name="url">The invalid URL to test.</param>
     [Theory]
     [InlineData("ht!tp://invalid")]
     [InlineData("https://")]

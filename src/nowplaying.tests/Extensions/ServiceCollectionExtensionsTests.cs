@@ -12,8 +12,14 @@ using NowPlaying.Models;
 using NowPlaying.Services;
 using Xunit;
 
+/// <summary>
+/// Unit tests for the <see cref="NowPlaying.Extensions.ServiceCollectionExtensions"/> class.
+/// </summary>
 public class ServiceCollectionExtensionsTests
 {
+    /// <summary>
+    /// Verifies that AddServices registers all required types in the service collection.
+    /// </summary>
     [Fact]
     public void AddServices_RegistersRequiredTypes()
     {
@@ -48,6 +54,9 @@ public class ServiceCollectionExtensionsTests
         Assert.NotNull(provider.GetService<HistoryEndpoints>());
     }
 
+    /// <summary>
+    /// Verifies that AddServices sets secure cookie policy when running in production.
+    /// </summary>
     [Fact]
     public void AddServices_InProduction_SetsSecureCookiePolicy()
     {
@@ -78,6 +87,9 @@ public class ServiceCollectionExtensionsTests
         Assert.True(true);
     }
 
+    /// <summary>
+    /// Verifies that MapEndpoints returns the same application instance and does not throw.
+    /// </summary>
     [Fact]
     public void MapEndpoints_ReturnsSameAppAndDoesNotThrow()
     {

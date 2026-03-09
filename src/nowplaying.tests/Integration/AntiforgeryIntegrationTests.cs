@@ -2,7 +2,6 @@
 namespace NowPlaying.Tests.Integration;
 
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using NowPlaying.Endpoints;
 using NowPlaying.Extensions;
@@ -16,6 +15,9 @@ using Xunit;
 /// </summary>
 public class AntiforgeryIntegrationTests
 {
+    /// <summary>
+    /// Verifies that the post-composite endpoint has anti-forgery disabled.
+    /// </summary>
     [Fact]
     public void PostCompositeEndpoint_HasAntiforgeryDisabled()
     {

@@ -13,6 +13,9 @@ using Xunit;
 
 namespace NowPlaying.Tests.Endpoints;
 
+/// <summary>
+/// Unit tests for the <see cref="PostingEndpoints"/> class.
+/// </summary>
 public class PostingEndpointsTests
 {
     private readonly Mock<IBandcampService> _bandcampServiceMock;
@@ -23,6 +26,9 @@ public class PostingEndpointsTests
     private readonly Mock<ILogger<PostingEndpoints>> _loggerMock;
     private readonly AppConfig _config;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PostingEndpointsTests"/> class.
+    /// </summary>
     public PostingEndpointsTests()
     {
         _bandcampServiceMock = new Mock<IBandcampService>();
@@ -41,8 +47,17 @@ public class PostingEndpointsTests
         _httpContextMock.Setup(h => h.Session).Returns(_sessionMock.Object);
     }
 
+    /// <summary>
+    /// Creates a new instance of <see cref="PostingEndpoints"/>.
+    /// </summary>
+    /// <returns>A new <see cref="PostingEndpoints"/> instance.</returns>
     private PostingEndpoints CreateEndpoints() => new(_bandcampServiceMock.Object, _mastodonServiceMock.Object, _imageServiceMock.Object, _loggerMock.Object);
 
+    /// <summary>
+    /// Sets up an authenticated user in the current HTTP context.
+    /// </summary>
+    /// <param name="instance">The instance URL.</param>
+    /// <param name="accessToken">The access token.</param>
     private void SetupAuthenticatedUser(string instance, string accessToken)
     {
         var claims = ClaimsExtensions.CreateAuthenticationClaims(instance, accessToken, "test-user-id");
@@ -51,6 +66,10 @@ public class PostingEndpointsTests
         _httpContextMock.Setup(h => h.User).Returns(principal);
     }
 
+    /// <summary>
+    /// Verifies that Scrape returns a result for a valid Bandcamp URL.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Scrape_WithValidBandcampUrl_ReturnsResult()
     {
@@ -74,6 +93,9 @@ public class PostingEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that ScrapeRequest fails validation when the URL is null.
+    /// </summary>
     [Fact]
     public void ScrapeRequest_WithNullUrl_FailsValidation()
     {
@@ -89,6 +111,9 @@ public class PostingEndpointsTests
         Assert.Contains(validationResults, r => r.MemberNames.Contains(nameof(ScrapeRequest.Url)));
     }
 
+    /// <summary>
+    /// Verifies that ScrapeRequest fails validation when the URL is invalid.
+    /// </summary>
     [Fact]
     public void ScrapeRequest_WithInvalidUrl_FailsValidation()
     {
@@ -104,6 +129,10 @@ public class PostingEndpointsTests
         Assert.Contains(validationResults, r => r.MemberNames.Contains(nameof(ScrapeRequest.Url)));
     }
 
+    /// <summary>
+    /// Verifies that Scrape returns a result even for non-Bandcamp URLs.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Scrape_WithNonBandcampUrl_ReturnsResult()
     {
@@ -117,6 +146,10 @@ public class PostingEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Scrape returns an internal server error on general exceptions.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Scrape_ReturnsInternalError_OnGeneralException()
     {
@@ -134,6 +167,10 @@ public class PostingEndpointsTests
         Assert.Equal(StatusCodes.Status500InternalServerError, statusCodeResult.StatusCode);
     }
 
+    /// <summary>
+    /// Verifies that Scrape returns bad request on HTTP request exceptions.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Scrape_ReturnsBadRequest_OnHttpRequestException()
     {
@@ -150,6 +187,10 @@ public class PostingEndpointsTests
         Assert.Contains("Failed to scrape URL", badRequest.Value!.Error);
     }
 
+    /// <summary>
+    /// Verifies that Post returns a result for a valid request.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Post_WithValidRequest_ReturnsResult()
     {
@@ -174,6 +215,10 @@ public class PostingEndpointsTests
         Assert.NotNull(result);
     }
 
+    /// <summary>
+    /// Verifies that Post returns an internal server error on general exceptions.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Post_ReturnsInternalError_OnGeneralException()
     {
@@ -192,6 +237,10 @@ public class PostingEndpointsTests
         Assert.Equal(StatusCodes.Status500InternalServerError, statusCodeResult.StatusCode);
     }
 
+    /// <summary>
+    /// Verifies that Post returns bad request on HTTP request exceptions.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Post_ReturnsBadRequest_OnHttpRequestException()
     {
@@ -209,6 +258,10 @@ public class PostingEndpointsTests
         Assert.Contains("Failed to post", badRequest.Value!.Error);
     }
 
+    /// <summary>
+    /// Verifies that Post returns unauthorized when the user is not authenticated.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Post_WithoutAuthentication_ReturnsResult()
     {
@@ -220,6 +273,9 @@ public class PostingEndpointsTests
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => CreateEndpoints().Post(_httpContextMock.Object, request));
     }
 
+    /// <summary>
+    /// Verifies that PostRequest fails validation when text is missing.
+    /// </summary>
     [Fact]
     public void PostRequest_WithMissingText_FailsValidation()
     {
@@ -235,6 +291,9 @@ public class PostingEndpointsTests
         Assert.Contains(validationResults, r => r.MemberNames.Contains(nameof(PostRequest.Text)));
     }
 
+    /// <summary>
+    /// Verifies that PostRequest fails validation when the image URL is missing.
+    /// </summary>
     [Fact]
     public void PostRequest_WithMissingImage_FailsValidation()
     {
@@ -250,6 +309,10 @@ public class PostingEndpointsTests
         Assert.Contains(validationResults, r => r.MemberNames.Contains(nameof(PostRequest.ImageUrl)));
     }
 
+    /// <summary>
+    /// Verifies that Post returns unauthorized when the Mastodon service throws a 401 error.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Post_ReturnsUnauthorized_WhenMastodonServiceThrows401()
     {
@@ -267,6 +330,10 @@ public class PostingEndpointsTests
         await Assert.ThrowsAsync<HttpRequestException>(() => CreateEndpoints().Post(_httpContextMock.Object, request));
     }
 
+    /// <summary>
+    /// Verifies that Post returns bad request when a network error occurs.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task Post_ReturnsBadRequest_WhenNetworkErrorOccurs()
     {
@@ -288,8 +355,12 @@ public class PostingEndpointsTests
         Assert.Contains("Network error", badRequest.Value!.Error);
     }
 
+    /// <summary>
+    /// Mock image HTTP handler for testing.
+    /// </summary>
     private class MockImageHttpHandler : HttpMessageHandler
     {
+        /// <inheritdoc/>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK);

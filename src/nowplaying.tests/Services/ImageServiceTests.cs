@@ -8,8 +8,15 @@ using Xunit;
 
 namespace NowPlaying.Tests.Services;
 
+/// <summary>
+/// Unit tests for the <see cref="ImageService"/> class.
+/// </summary>
 public class ImageServiceTests
 {
+    /// <summary>
+    /// Verifies that DownloadImageAsync returns the expected byte data.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task DownloadImageAsync_ReturnsData()
     {
@@ -27,6 +34,10 @@ public class ImageServiceTests
         Assert.Equal(content, result);
     }
 
+    /// <summary>
+    /// Verifies that GenerateCompositeAsync returns an empty result when no URLs are provided.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task GenerateCompositeAsync_ReturnsEmpty_WhenNoUrls()
     {
@@ -40,6 +51,10 @@ public class ImageServiceTests
         Assert.Empty(result);
     }
 
+    /// <summary>
+    /// Verifies that GenerateCompositeAsync returns an image when URLs are provided.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task GenerateCompositeAsync_ReturnsImage_WhenUrlsProvided()
     {
@@ -65,6 +80,10 @@ public class ImageServiceTests
         Assert.NotEmpty(result);
     }
 
+    /// <summary>
+    /// Verifies that GenerateCompositeAsync skips URLs that fail to download.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task GenerateCompositeAsync_SkipsFailedDownloads()
     {
@@ -91,6 +110,10 @@ public class ImageServiceTests
             Times.AtLeastOnce());
     }
 
+    /// <summary>
+    /// Verifies that DownloadImageAsync throws for an invalid URL.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task DownloadImageAsync_Throws_ForInvalidUrl()
     {
@@ -101,6 +124,10 @@ public class ImageServiceTests
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("not-a-url"));
     }
 
+    /// <summary>
+    /// Verifies that DownloadImageAsync throws for non-HTTP URLs.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task DownloadImageAsync_Throws_ForNonHttp()
     {
@@ -111,6 +138,10 @@ public class ImageServiceTests
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("ftp://example.com"));
     }
 
+    /// <summary>
+    /// Verifies that DownloadImageAsync throws for loopback addresses.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task DownloadImageAsync_Throws_ForLoopback()
     {
@@ -122,6 +153,10 @@ public class ImageServiceTests
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("http://127.0.0.1"));
     }
 
+    /// <summary>
+    /// Verifies that DownloadImageAsync throws for private IP addresses.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task DownloadImageAsync_Throws_ForPrivateIp()
     {
@@ -133,6 +168,10 @@ public class ImageServiceTests
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("http://10.0.0.1"));
     }
 
+    /// <summary>
+    /// Verifies that DownloadImageAsync throws for other private IP address ranges.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task DownloadImageAsync_Throws_ForOtherPrivateIps()
     {
@@ -144,6 +183,10 @@ public class ImageServiceTests
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("http://169.254.1.1"));
     }
 
+    /// <summary>
+    /// Verifies that DownloadImageAsync throws for IPv6 loopback address.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task DownloadImageAsync_Throws_ForIPv6Loopback()
     {
@@ -154,6 +197,10 @@ public class ImageServiceTests
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("http://[::1]"));
     }
 
+    /// <summary>
+    /// Verifies that DownloadImageAsync throws when DNS resolution fails.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task DownloadImageAsync_Throws_WhenDnsFails()
     {
@@ -165,6 +212,10 @@ public class ImageServiceTests
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("http://this.does.not.exist.example.invalid"));
     }
 
+    /// <summary>
+    /// Verifies that GenerateCompositeAsync skips invalid images.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task GenerateCompositeAsync_SkipsInvalidImages()
     {
@@ -191,17 +242,26 @@ public class ImageServiceTests
             Times.AtLeastOnce());
     }
 
+    /// <summary>
+    /// Mock HTTP message handler for testing.
+    /// </summary>
     private class MockHttpMessageHandler : HttpMessageHandler
     {
         private readonly byte[] _content;
         private readonly System.Net.HttpStatusCode _statusCode;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MockHttpMessageHandler"/> class.
+        /// </summary>
+        /// <param name="content">The content to return.</param>
+        /// <param name="statusCode">The status code to return.</param>
         public MockHttpMessageHandler(byte[] content, System.Net.HttpStatusCode statusCode = System.Net.HttpStatusCode.OK)
         {
             _content = content;
             _statusCode = statusCode;
         }
 
+        /// <inheritdoc/>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             return Task.FromResult(new HttpResponseMessage(_statusCode)

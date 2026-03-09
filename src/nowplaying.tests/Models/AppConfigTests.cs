@@ -43,6 +43,9 @@ public class AppConfigTests
     /// <summary>
     /// Verifies that AppConfig validation catches invalid settings.
     /// </summary>
+    /// <param name="url">The redirect URI.</param>
+    /// <param name="secret">The session secret.</param>
+    /// <param name="port">The port number.</param>
     [Theory]
     [InlineData("not-a-url", "secret-too-short", 0)] // Invalid URL, short secret, out of range port
     public void AppConfig_ShouldFailValidation_WhenValuesAreInvalid(string url, string secret, int port)

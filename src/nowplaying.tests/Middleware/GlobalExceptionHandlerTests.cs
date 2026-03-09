@@ -6,20 +6,29 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NowPlaying.Middleware;
-using NowPlaying.Models;
 using Xunit;
 
+/// <summary>
+/// Unit tests for the <see cref="GlobalExceptionHandler"/> class.
+/// </summary>
 public class GlobalExceptionHandlerTests
 {
     private readonly Mock<ILogger<GlobalExceptionHandler>> _loggerMock;
     private readonly GlobalExceptionHandler _handler;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GlobalExceptionHandlerTests"/> class.
+    /// </summary>
     public GlobalExceptionHandlerTests()
     {
         _loggerMock = new Mock<ILogger<GlobalExceptionHandler>>();
         _handler = new GlobalExceptionHandler(_loggerMock.Object);
     }
 
+    /// <summary>
+    /// Verifies that UnauthorizedAccessException is handled and returns a 401 status code.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task TryHandleAsync_WithUnauthorizedAccessException_Returns401()
     {
@@ -35,6 +44,10 @@ public class GlobalExceptionHandlerTests
         Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
     }
 
+    /// <summary>
+    /// Verifies that HttpRequestException with Unauthorized status is handled and returns a 401 status code.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task TryHandleAsync_WithHttpRequestException401_Returns401()
     {
@@ -50,6 +63,10 @@ public class GlobalExceptionHandlerTests
         Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
     }
 
+    /// <summary>
+    /// Verifies that general exceptions are handled and return a 500 status code.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task TryHandleAsync_WithGeneralException_Returns500()
     {

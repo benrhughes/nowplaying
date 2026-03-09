@@ -4,8 +4,14 @@ using Xunit;
 
 namespace NowPlaying.Tests.Models;
 
+/// <summary>
+/// Unit tests for response models.
+/// </summary>
 public class ResponseModelsTests
 {
+    /// <summary>
+    /// Verifies that ErrorResponse correctly stores the error message.
+    /// </summary>
     [Fact]
     public void ErrorResponse_CreatesWithError()
     {
@@ -16,6 +22,9 @@ public class ResponseModelsTests
         Assert.Equal("Test error", response.Error);
     }
 
+    /// <summary>
+    /// Verifies that StatusResponse correctly stores all properties.
+    /// </summary>
     [Fact]
     public void StatusResponse_CreatesWithAllProperties()
     {
@@ -28,6 +37,9 @@ public class ResponseModelsTests
         Assert.False(response.Registered);
     }
 
+    /// <summary>
+    /// Verifies that ScrapeResponse correctly stores all properties.
+    /// </summary>
     [Fact]
     public void ScrapeResponse_CreatesWithAllProperties()
     {
@@ -49,6 +61,9 @@ public class ResponseModelsTests
         Assert.Equal("https://example.bandcamp.com/album/test", response.Url);
     }
 
+    /// <summary>
+    /// Verifies that PostResponse correctly stores all properties.
+    /// </summary>
     [Fact]
     public void PostResponse_CreatesWithAllProperties()
     {
@@ -61,6 +76,9 @@ public class ResponseModelsTests
         Assert.Equal("https://mastodon.social/@user/123", response.Url);
     }
 
+    /// <summary>
+    /// Verifies that RegistrationResponse correctly stores success status and instance URL.
+    /// </summary>
     [Fact]
     public void RegistrationResponse_CreatesWithSuccessAndInstance()
     {
