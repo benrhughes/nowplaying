@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies (Frontend)
+      run: npm ci
+
+    - name: Restore dependencies (Backend)
+      run: dotnet restore src/nowplaying.sln
+
+    - name: Build (Backend)
+      run: dotnet build src/nowplaying.sln --no-restore -c Release
+
+    - name: Test (Backend)
+      run: |
+        dotnet test src/nowplaying.tests/nowplaying.tests.csproj \
+          -c Release \
+          --no-build \
+          --collect:"XPlat Code Coverage" \
+          --settings src/.runsettings \
+          --logger "trx;LogFileName=test-results.trx" \
+          --logger GitHubActions
+
+    - name: Backend Coverage Summary
+      run: |
+        echo "### Backend Coverage Summary" >> $GITHUB_STEP_SUMMARY
+        COVERAGE_FILE=$(find src/nowplaying.tests/TestResults -name "coverage.cobertura.xml" | head -n 1)
+        if [ -f "$COVERAGE_FILE" ]; then
+          python3 src/coverage_summary.py "$COVERAGE_FILE" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "Coverage file not found" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Test (Frontend)
+      run: |
+        echo "### Frontend Test Results" >> $GITHUB_STEP_SUMMARY
+        npm run test:coverage | tee -a $GITHUB_STEP_SUMMARY
+
+    - name: Verify Docker Build
+      run: docker build . -t nowplaying:latest
+
+    - name: Upload Backend Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: backend-test-results
+        path: src/nowplaying.tests/TestResults/test-results.trx
+
+    - name: Upload Coverage Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports
+        path: |
+          src/nowplaying.tests/TestResults/*/coverage.cobertura.xml
+          coverage/
