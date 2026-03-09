@@ -1,7 +1,6 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 namespace NowPlaying.Services;
 
-using System.Net;
 using NowPlaying.Extensions;
 using NowPlaying.Models;
 

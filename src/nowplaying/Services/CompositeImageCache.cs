@@ -8,9 +8,11 @@ using Microsoft.Extensions.Caching.Memory;
 /// </summary>
 public class CompositeImageCache : ICompositeImageCache
 {
-    private readonly IMemoryCache memoryCache;
-    private readonly ILogger<CompositeImageCache> logger;
-    private readonly TimeSpan cacheExpiration = TimeSpan.FromMinutes(30);
+    private readonly IMemoryCache _memoryCache;
+
+    private readonly ILogger<CompositeImageCache> _logger;
+
+    private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(30);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CompositeImageCache"/> class.
@@ -19,8 +21,8 @@ public class CompositeImageCache : ICompositeImageCache
     /// <param name="logger">The logger.</param>
     public CompositeImageCache(IMemoryCache memoryCache, ILogger<CompositeImageCache> logger)
     {
-        this.memoryCache = memoryCache;
-        this.logger = logger;
+        this._memoryCache = memoryCache;
+        this._logger = logger;
     }
 
     /// <inheritdoc/>
@@ -29,30 +31,30 @@ public class CompositeImageCache : ICompositeImageCache
         var cacheId = Guid.NewGuid().ToString();
 
         var cacheOptions = new MemoryCacheEntryOptions()
-            .SetAbsoluteExpiration(this.cacheExpiration);
+            .SetAbsoluteExpiration(this._cacheExpiration);
 
-        this.memoryCache.Set(cacheId, imageData, cacheOptions);
+        this._memoryCache.Set(cacheId, imageData, cacheOptions);
 
-        this.logger.LogInformation("Stored composite image in cache with ID {CacheId}, expires in {Expiration} minutes", cacheId, this.cacheExpiration.TotalMinutes);
+        this._logger.LogInformation("Stored composite image in cache with ID {CacheId}, expires in {Expiration} minutes", cacheId, this._cacheExpiration.TotalMinutes);
         return cacheId;
     }
 
     /// <inheritdoc/>
     public byte[] ? Retrieve(string cacheId)
     {
-        if (this.memoryCache.TryGetValue(cacheId, out byte[] ? imageData))
+        if (this._memoryCache.TryGetValue(cacheId, out byte[] ? imageData))
         {
             return imageData;
         }
 
-        this.logger.LogWarning("Cache entry {CacheId} not found", cacheId);
+        this._logger.LogWarning("Cache entry {CacheId} not found", cacheId);
         return null;
     }
 
     /// <inheritdoc/>
     public void Remove(string cacheId)
     {
-        this.memoryCache.Remove(cacheId);
-        this.logger.LogInformation("Removed composite image from cache with ID {CacheId}", cacheId);
+        this._memoryCache.Remove(cacheId);
+        this._logger.LogInformation("Removed composite image from cache with ID {CacheId}", cacheId);
     }
 }

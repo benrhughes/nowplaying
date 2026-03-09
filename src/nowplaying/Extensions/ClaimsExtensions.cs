@@ -8,9 +8,11 @@ using System.Security.Claims;
 /// </summary>
 public static class ClaimsExtensions
 {
-    private const string InstanceClaimType = "instance";
-    private const string AccessTokenClaimType = "accessToken";
-    private const string UserIdClaimType = "userid";
+    private const string _instanceClaimType = "instance";
+
+    private const string _accessTokenClaimType = "accessToken";
+
+    private const string _userIdClaimType = "userid";
 
     /// <summary>
     /// Extracts the Mastodon instance URL from claims.
@@ -24,7 +26,7 @@ public static class ClaimsExtensions
             return null;
         }
 
-        return principal.FindFirst(InstanceClaimType)?.Value;
+        return principal.FindFirst(_instanceClaimType)?.Value;
     }
 
     /// <summary>
@@ -39,7 +41,7 @@ public static class ClaimsExtensions
             return null;
         }
 
-        return principal.FindFirst(AccessTokenClaimType)?.Value;
+        return principal.FindFirst(_accessTokenClaimType)?.Value;
     }
 
     /// <summary>
@@ -54,7 +56,7 @@ public static class ClaimsExtensions
             return null;
         }
 
-        return principal.FindFirst(UserIdClaimType)?.Value;
+        return principal.FindFirst(_userIdClaimType)?.Value;
     }
 
     /// <summary>
@@ -68,9 +70,9 @@ public static class ClaimsExtensions
     {
         return
         [
-            new (InstanceClaimType, instance),
-            new (AccessTokenClaimType, accessToken),
-            new (UserIdClaimType, userId)
+            new (_instanceClaimType, instance),
+            new (_accessTokenClaimType, accessToken),
+            new (_userIdClaimType, userId)
         ];
     }
 }
