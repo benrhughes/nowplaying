@@ -59,6 +59,10 @@ public static class ServiceCollectionExtensions
         services.AddExceptionHandler<Middleware.GlobalExceptionHandler>();
         services.AddProblemDetails();
 
+        // Register memory cache and composite image cache for temporary storage
+        services.AddMemoryCache();
+        services.AddSingleton<ICompositeImageCache, CompositeImageCache>();
+
         // Register endpoint classes for DI
         services.AddScoped<AuthenticationEndpoints>();
         services.AddScoped<PostingEndpoints>();
@@ -105,7 +109,8 @@ public static class ServiceCollectionExtensions
 
         historyGroup.MapGet("/search", (HistoryEndpoints e, HttpContext c, [AsParameters] HistorySearchRequest request) => e.Search(c, request));
         historyGroup.MapPost("/composite", (HistoryEndpoints e, CompositeRequest r) => e.Composite(r));
-        historyGroup.MapPost("/post-composite", (HistoryEndpoints e, HttpContext c, [Microsoft.AspNetCore.Mvc.FromForm] PostCompositeRequest r) => e.PostComposite(c, r));
+        historyGroup.MapGet("/composite-preview/{cacheId}", (HistoryEndpoints e, string cacheId) => e.GetCompositePreview(cacheId));
+        historyGroup.MapPost("/post-composite", (HistoryEndpoints e, HttpContext c, PostCompositeRequest r) => e.PostComposite(c, r));
 
         // Serve index.html for root
         app.MapGet("/", context =>

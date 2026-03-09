@@ -41,6 +41,13 @@ public record ScrapeResponse(
 public record PostResponse(bool Success, string StatusId, string Url);
 
 /// <summary>
+/// Response returned after generating a composite image.
+/// </summary>
+/// <param name="CacheId">The cache ID for the generated composite image.</param>
+/// <param name="ContentType">The MIME type of the image.</param>
+public record CompositeResponse(string CacheId, string ContentType);
+
+/// <summary>
 /// Response returned after application registration.
 /// </summary>
 /// <param name="Success">Whether registration was successful.</param>

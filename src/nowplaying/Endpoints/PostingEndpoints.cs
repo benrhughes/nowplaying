@@ -73,10 +73,15 @@ public class PostingEndpoints(
 
             return Results.Ok(new PostResponse(true, statusId, url));
         }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            logger.LogWarning(ex, "Post failed with unauthorized access");
+            throw;
+        }
         catch (HttpRequestException ex)
         {
             logger.LogWarning(ex, "Post failed due to network error: {message}", ex.Message);
-            throw;
+            return Results.BadRequest(new ErrorResponse($"Failed to post: {ex.Message}"));
         }
         catch (Exception ex)
         {

@@ -16,7 +16,7 @@ export default {
             <small v-if="altTextCharCount > 1500" class="message-error">Alt text exceeds 1500 character limit</small>
 
             <figure>
-                <img :src="previewUrl" :alt="altText" class="preview-image">
+                <img :src="displayPreviewUrl" :alt="altText" class="preview-image">
                 <figcaption class="preview-text">
                     {{ text }}
                 </figcaption>
@@ -35,7 +35,8 @@ export default {
         initialText: String,
         initialAltText: String,
         imageUrl: String,
-        imageBlob: Blob
+        previewUrl: String,
+        cacheId: String
     },
     data() {
         return {
@@ -43,27 +44,15 @@ export default {
             altText: this.initialAltText || '',
             loading: false,
             error: null,
-            success: null,
-            blobPreviewUrl: null
+            success: null
         }
     },
     computed: {
         altTextCharCount() {
             return this.altText ? this.altText.length : 0;
         },
-        previewUrl() {
-            if (this.imageBlob) {
-                if (!this.blobPreviewUrl) {
-                    this.blobPreviewUrl = URL.createObjectURL(this.imageBlob);
-                }
-                return this.blobPreviewUrl;
-            }
-            return this.imageUrl;
-        }
-    },
-    beforeUnmount() {
-        if (this.blobPreviewUrl) {
-            URL.revokeObjectURL(this.blobPreviewUrl);
+        displayPreviewUrl() {
+            return this.previewUrl || this.imageUrl;
         }
     },
     methods: {
@@ -74,18 +63,18 @@ export default {
 
             try {
                 let res;
-                // If we have a blob, we use the composite endpoint (multipart/form-data)
-                if (this.imageBlob) {
-                    const formData = new FormData();
-                    formData.append('image', this.imageBlob, 'nowplaying_composite.jpg');
-                    formData.append('altText', this.altText);
-                    formData.append('text', this.text);
-                    
+                // If we have a cache ID, we use the post-composite endpoint (cached image)
+                if (this.cacheId) {
                     res = await fetch('/api/history/post-composite', {
                         method: 'POST',
-                        body: formData
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            cacheId: this.cacheId,
+                            altText: this.altText,
+                            text: this.text
+                        })
                     });
-                } 
+                }
                 // Otherwise we use the standard posting endpoint (JSON with image URL)
                 else {
                     res = await fetch('/api/posting/post', {
@@ -106,7 +95,7 @@ export default {
                     }
                     throw new Error((await res.json()).error);
                 }
-                
+
                 const data = await res.json();
                 this.success = `Posted successfully! <a href="${data.url}" target="_blank">View Post</a>`;
                 this.$emit('posted', data);

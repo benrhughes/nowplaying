@@ -55,17 +55,17 @@ describe('MastodonPost Component', () => {
     expect(wrapper.emitted('posted')).toBeTruthy();
   });
 
-  it('posts FormData payload when blob provided', async () => {
+  it('posts JSON payload when cacheId provided', async () => {
     global.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ url: 'https://mastodon.social/123' })
     });
 
-    const blob = new Blob(['test'], { type: 'image/jpeg' });
     wrapper = mount(MastodonPost, {
         props: {
             initialText: 'Text',
-            imageBlob: blob
+            cacheId: 'cached-123',
+            previewUrl: '/some/url'
         }
     });
 
@@ -75,7 +75,8 @@ describe('MastodonPost Component', () => {
         '/api/history/post-composite',
         expect.objectContaining({
             method: 'POST',
-            body: expect.any(FormData)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cacheId: 'cached-123', altText: '', text: 'Text' })
         })
     );
     expect(wrapper.emitted('posted')).toBeTruthy();

@@ -65,15 +65,15 @@ public class CompositeRequest
 }
 
 /// <summary>
-/// Request model for posting a composite image via multipart/form-data.
+/// Request model for posting a composite image.
 /// </summary>
 public class PostCompositeRequest
 {
     /// <summary>
-    /// Gets or sets the uploaded image file.
+    /// Gets or sets the cache ID of the previously generated composite image.
     /// </summary>
-    [Required(ErrorMessage = "Image is required")]
-    public IFormFile Image { get; set; } = default!;
+    [Required(ErrorMessage = "Cache ID is required")]
+    public string CacheId { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the alternative text for the image.

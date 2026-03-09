@@ -69,7 +69,8 @@ export default {
                 ref="postForm"
                 :initial-text="postText"
                 :initial-alt-text="altText"
-                :image-blob="compositeBlob"
+                :cache-id="compositeCacheId"
+                :preview-url="compositeUrl"
                 @posted="handlePosted"
                 @cancel="showPostForm = false"
                 @unauthorized="$emit('unauthorized')"
@@ -91,7 +92,7 @@ export default {
             posts: [],
             searched: false,
             compositeUrl: null,
-            compositeBlob: null,
+            compositeCacheId: null,
             showPostForm: false
         }
     },
@@ -147,12 +148,15 @@ export default {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ imageUrls })
                 });
-                
+
                 if (!res.ok) throw new Error((await res.json()).error);
-                
-                const blob = await res.blob();
-                this.compositeUrl = URL.createObjectURL(blob);
-                this.compositeBlob = blob;
+
+                const data = await res.json();
+                this.compositeCacheId = data.cacheId;
+
+                // Rather than fetching the bytes and creating a blob, we can simply point
+                // the <img> tag at the preview endpoint and let the browser load it.
+                this.compositeUrl = `/api/history/composite-preview/${data.cacheId}`;
             } catch (e) {
                 this.error = e.message;
             } finally {
@@ -166,10 +170,16 @@ export default {
             el?.scrollIntoView({ behavior: 'smooth' });
         },
         handlePosted() {
+            // After we successfully post the composite, clear all state related to
+            // the previous search so the UI returns to its original form.  In
+            // particular we reset `searched`; otherwise the empty `posts` array
+            // would trigger the "No posts found in this range" banner which is
+            // misleading after a post has been made.
             this.showPostForm = false;
             this.posts = [];
             this.compositeUrl = null;
-            this.compositeBlob = null;
+            this.compositeCacheId = null;
+            this.searched = false;
         }
     }
 }

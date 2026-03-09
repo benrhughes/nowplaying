@@ -47,11 +47,10 @@ describe('History Component', () => {
         json: async () => ([{ imageUrl: 'img.jpg', altText: 'Alt' }])
     });
 
-    // Composite response
-    const blob = new Blob(['img'], { type: 'image/jpeg' });
+    // Composite response now returns cacheId and contentType
     global.fetch.mockResolvedValueOnce({
         ok: true,
-        blob: async () => blob
+        json: async () => ({ cacheId: 'cached-123', contentType: 'image/png' })
     });
 
     wrapper = mount(History);
@@ -59,11 +58,9 @@ describe('History Component', () => {
     await wrapper.vm.$nextTick(); // Wait for composite generation
     await wrapper.vm.$nextTick(); // Wait for state update
 
-    expect(wrapper.vm.compositeBlob).toBeTruthy();
-    
-    // Set compositeUrl manually since we don't have a real DOM URL.createObjectURL
-    wrapper.vm.compositeUrl = 'blob:url';
-    await wrapper.vm.$nextTick();
+    // verify component state was updated correctly
+    expect(wrapper.vm.compositeCacheId).toBe('cached-123');
+    expect(wrapper.vm.compositeUrl).toBe('/api/history/composite-preview/cached-123');
 
     // The "Share to Mastodon" button is shown when compositeUrl is present
     const shareBtn = wrapper.findAll('button').find(b => b.text().includes('Share to Mastodon'));
@@ -72,5 +69,18 @@ describe('History Component', () => {
 
     expect(wrapper.vm.showPostForm).toBe(true);
     expect(wrapper.findComponent({ name: 'MastodonPost' }).exists()).toBe(true);
+  });
+
+  it('resets search state after posting so no empty-result message displays', async () => {
+    // simulate a completed search
+    wrapper = mount(History);
+    wrapper.vm.searched = true;
+    wrapper.vm.posts = [{ imageUrl: 'foo', altText: 'bar' }];
+
+    wrapper.vm.handlePosted();
+
+    expect(wrapper.vm.searched).toBe(false);
+    // message from template should not appear
+    expect(wrapper.text()).not.toContain('No posts found in this range');
   });
 });

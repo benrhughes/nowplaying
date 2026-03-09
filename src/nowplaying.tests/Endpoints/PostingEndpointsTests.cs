@@ -198,6 +198,27 @@ public class PostingEndpointsTests
         await Assert.ThrowsAsync<HttpRequestException>(() => CreateEndpoints().Post(_httpContextMock.Object, request));
     }
 
+    [Fact]
+    public async Task Post_ReturnsBadRequest_WhenNetworkErrorOccurs()
+    {
+        // Arrange
+        var request = new PostRequest { Text = "Check this out!", ImageUrl = "https://example.com/image.jpg" };
+        SetupAuthenticatedUser("https://mastodon.social", "test-token");
+
+        _imageServiceMock.Setup(i => i.DownloadImageAsync(request.ImageUrl))
+            .ReturnsAsync(new byte[] { 0x89, 0x50, 0x4E, 0x47 });
+
+        _mastodonServiceMock.Setup(m => m.UploadMediaAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<byte[]>(), null))
+            .ThrowsAsync(new HttpRequestException("Network error"));
+
+        // Act
+        var result = await CreateEndpoints().Post(_httpContextMock.Object, request);
+
+        // Assert
+        var badRequest = Assert.IsAssignableFrom<Microsoft.AspNetCore.Http.HttpResults.BadRequest<ErrorResponse>>(result);
+        Assert.Contains("Network error", badRequest.Value!.Error);
+    }
+
     private class MockImageHttpHandler : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
