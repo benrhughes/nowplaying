@@ -1,7 +1,6 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 namespace NowPlaying.Services;
 
-using System.Net;
 using NowPlaying.Extensions;
 using NowPlaying.Models;
 
@@ -33,9 +32,9 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
             throw new HttpRequestException($"Failed to register app: {response.StatusCode}", null, response.StatusCode);
         }
 
-        var data = await response.Content.ReadAsAsync<Dictionary<string, object>>();
-        var clientId = data?["client_id"]?.ToString() ?? throw new InvalidOperationException("No client_id in response");
-        var clientSecret = data?["client_secret"]?.ToString() ?? throw new InvalidOperationException("No client_secret in response");
+        var data = await response.Content.ReadAsAsync<AppRegistrationResponse>();
+        var clientId = data?.ClientId ?? throw new InvalidOperationException("No client_id in response");
+        var clientSecret = data?.ClientSecret ?? throw new InvalidOperationException("No client_secret in response");
 
         return (clientId, clientSecret);
     }
@@ -200,40 +199,40 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 logger.LogError("Get tagged posts failed: {StatusCode} {Content}", response.StatusCode, errorContent);
-                if (response.StatusCode == HttpStatusCode.Unauthorized)
-                {
-                    throw new HttpRequestException($"Failed to get tagged posts: {response.StatusCode}", null, response.StatusCode);
-                }
-
-                break;
+                throw new HttpRequestException($"Failed to get tagged posts: {response.StatusCode}", null, response.StatusCode);
             }
 
             var batch = await response.Content.ReadAsAsync<List<StatusMastodonResponse>>();
-            if (batch == null || batch.Count == 0)
+            if (batch == null || batch.Count == 0 || batch.Last().id == maxId)
             {
-                break;
+                hasMore = false;
             }
-
-            foreach (var status in batch)
+            else
             {
-                // Stop pagination when we reach posts older than the start date
-                if (status.CreatedAt.HasValue && status.CreatedAt.Value.DateTime < since)
+                foreach (var status in batch)
                 {
-                    hasMore = false;
-                    break;
+                    // Stop pagination when we reach posts older than the start date
+                    if (status.CreatedAt.HasValue && status.CreatedAt.Value.DateTime < since)
+                    {
+                        hasMore = false;
+                        break;
+                    }
+
+                    // Only include posts within the date range
+                    if (status.CreatedAt.HasValue && status.CreatedAt.Value.DateTime <= until)
+                    {
+                        statuses.Add(status);
+                    }
+
+                    maxId = status.id;
                 }
 
-                // Only include posts within the date range
-                if (status.CreatedAt.HasValue && status.CreatedAt.Value.DateTime <= until)
+                // Simple rate limiting
+                if (hasMore)
                 {
-                    statuses.Add(status);
+                    await Task.Delay(200);
                 }
-
-                maxId = status.id;
             }
-
-            // Simple rate limiting
-            await Task.Delay(200);
         }
 
         return statuses;

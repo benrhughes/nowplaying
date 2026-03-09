@@ -8,7 +8,7 @@ using System.Text.Json;
 /// </summary>
 public static class HttpContentExtensions
 {
-    private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions()
+    private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions()
     {
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -23,6 +23,6 @@ public static class HttpContentExtensions
     public static async Task<T?> ReadAsAsync<T>(this HttpContent content)
     {
         var json = await content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<T>(json, JsonOptions);
+        return JsonSerializer.Deserialize<T>(json, _jsonOptions);
     }
 }

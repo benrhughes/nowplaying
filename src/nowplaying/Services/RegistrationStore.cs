@@ -13,7 +13,9 @@ public class RegistrationStore(ILogger<RegistrationStore> logger, IHostEnvironme
     : IRegistrationStore
 {
     private readonly string _filePath = Path.Combine(env.ContentRootPath, "registrations.json");
+
     private readonly ConcurrentDictionary<string, RegistrationInfo> _store = LoadStore(Path.Combine(env.ContentRootPath, "registrations.json"), logger);
+
     private readonly object _fileLock = new object();
 
     /// <summary>

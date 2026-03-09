@@ -38,6 +38,8 @@ describe('History Component', () => {
         '/api/history/search?since=2025-01-01&until=2025-01-07&tag=%23nowplaying'
     );
     expect(wrapper.vm.posts).toHaveLength(1);
+    expect(wrapper.vm.posts[0].postId).toBe('1');
+    expect(wrapper.vm.posts[0].imageUrl).toBe('img1.jpg');
   });
 
   it('generates composite and shows MastodonPost when Share clicked', async () => {
@@ -64,7 +66,8 @@ describe('History Component', () => {
 
     // The "Share to Mastodon" button is shown when compositeUrl is present
     const shareBtn = wrapper.findAll('button').find(b => b.text().includes('Share to Mastodon'));
-    expect(shareBtn).toBeDefined();
+    expect(shareBtn).toBeTruthy();
+    expect(shareBtn.isVisible()).toBe(true);
     await shareBtn.trigger('click');
 
     expect(wrapper.vm.showPostForm).toBe(true);
@@ -82,5 +85,74 @@ describe('History Component', () => {
     expect(wrapper.vm.searched).toBe(false);
     // message from template should not appear
     expect(wrapper.text()).not.toContain('No posts found in this range');
+  });
+
+  it('emits unauthorized when search returns 401', async () => {
+    global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401
+    });
+
+    wrapper = mount(History);
+    await wrapper.vm.search();
+
+    expect(wrapper.emitted('unauthorized')).toBeTruthy();
+  });
+
+  it('shows error on search failure', async () => {
+    global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: 'Search failed' })
+    });
+
+    wrapper = mount(History);
+    await wrapper.vm.search();
+
+    expect(wrapper.vm.error).toBe('Search failed');
+  });
+
+  it('shows error on composite generation failure', async () => {
+    // Search response OK
+    global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ([{ imageUrl: 'img.jpg', altText: 'Alt' }])
+    });
+    // Composite response FAIL
+    global.fetch.mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ error: 'Composite failed' })
+    });
+
+    wrapper = mount(History);
+    await wrapper.vm.search();
+    await wrapper.vm.$nextTick(); // Wait for generateComposite
+
+    expect(wrapper.vm.error).toBe('Composite failed');
+  });
+
+  it('emits unauthorized when MastodonPost emits unauthorized', async () => {
+    wrapper = mount(History);
+    wrapper.vm.showPostForm = true;
+    await wrapper.vm.$nextTick();
+
+    const postComponent = wrapper.findComponent({ name: 'MastodonPost' });
+    postComponent.vm.$emit('unauthorized');
+
+    expect(wrapper.emitted('unauthorized')).toBeTruthy();
+  });
+
+  it('renders albums list in details', async () => {
+    wrapper = mount(History);
+    wrapper.vm.posts = [
+        { postId: '1', altText: 'Alt 1' },
+        { postId: '2', altText: 'Alt 2' }
+    ];
+    wrapper.vm.compositeUrl = 'foo.jpg';
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('summary').text()).toContain('View Albums (2)');
+    expect(wrapper.find('ol').text()).toContain('Alt 1');
+    expect(wrapper.find('ol').text()).toContain('Alt 2');
   });
 });

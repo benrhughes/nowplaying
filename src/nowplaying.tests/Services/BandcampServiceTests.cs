@@ -6,8 +6,17 @@ using Xunit;
 
 namespace NowPlaying.Tests.Services;
 
+/// <summary>
+/// Unit tests for the <see cref="BandcampService"/> class.
+/// </summary>
 public class BandcampServiceTests
 {
+    /// <summary>
+    /// Creates a new instance of the <see cref="BandcampService"/> with a mock handler.
+    /// </summary>
+    /// <param name="content">The HTML content to return.</param>
+    /// <param name="statusCode">The HTTP status code to return.</param>
+    /// <returns>A new <see cref="BandcampService"/> instance.</returns>
     private BandcampService CreateService(string? content, System.Net.HttpStatusCode statusCode = System.Net.HttpStatusCode.OK)
     {
         var httpClient = new HttpClient(new MockHttpMessageHandler(content, statusCode));
@@ -15,6 +24,10 @@ public class BandcampServiceTests
         return new BandcampService(httpClient, logger.Object);
     }
 
+    /// <summary>
+    /// Verifies that ScrapeAsync returns correctly parsed data for a valid Bandcamp URL.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task ScrapeAsync_WithValidUrl_ReturnsScrapedData()
     {
@@ -43,6 +56,10 @@ public class BandcampServiceTests
         Assert.Equal(url, result.Url);
     }
 
+    /// <summary>
+    /// Verifies that artist and album are correctly parsed when using the "by" pattern.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task ScrapeAsync_WithByPattern_ParsesArtistAndAlbum()
     {
@@ -67,6 +84,10 @@ public class BandcampServiceTests
         Assert.Equal("Awesome Album", result.Album);
     }
 
+    /// <summary>
+    /// Verifies that ScrapeAsync uses alternative tags when OG tags are missing.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task ScrapeAsync_WithMissingOgTags_UsesAlternatives()
     {
@@ -90,6 +111,10 @@ public class BandcampServiceTests
         Assert.Null(result.Image);
     }
 
+    /// <summary>
+    /// Verifies that an empty artist and album are returned when the title is not parseable.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task ScrapeAsync_WithoutParseableTitle_ReturnsEmptyArtistAndAlbum()
     {
@@ -114,6 +139,10 @@ public class BandcampServiceTests
         Assert.Equal(string.Empty, result.Album);
     }
 
+    /// <summary>
+    /// Verifies that ScrapeAsync throws an exception on HTTP error.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task ScrapeAsync_WithHttpError_ThrowsException()
     {
@@ -125,6 +154,10 @@ public class BandcampServiceTests
         await Assert.ThrowsAsync<HttpRequestException>(() => service.ScrapeAsync(url));
     }
 
+    /// <summary>
+    /// Verifies that trailing commas are trimmed from album names.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
     public async Task ScrapeAsync_WithCommaInAlbumName_TrimsTrailingComma()
     {
@@ -147,17 +180,26 @@ public class BandcampServiceTests
         Assert.Equal("Test Album", result.Album);
     }
 
+    /// <summary>
+    /// Mock HTTP message handler for testing.
+    /// </summary>
     private class MockHttpMessageHandler : HttpMessageHandler
     {
         private readonly string? _content;
         private readonly System.Net.HttpStatusCode _statusCode;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MockHttpMessageHandler"/> class.
+        /// </summary>
+        /// <param name="content">The content to return.</param>
+        /// <param name="statusCode">The status code to return.</param>
         public MockHttpMessageHandler(string? content, System.Net.HttpStatusCode statusCode = System.Net.HttpStatusCode.OK)
         {
             _content = content;
             _statusCode = statusCode;
         }
 
+        /// <inheritdoc/>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var response = new HttpResponseMessage(_statusCode);

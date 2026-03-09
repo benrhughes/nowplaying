@@ -12,17 +12,23 @@ using Xunit;
 /// </summary>
 public class CompositeImageCacheTests
 {
-    private readonly IMemoryCache memoryCache;
-    private readonly Mock<ILogger<CompositeImageCache>> loggerMock;
-    private readonly CompositeImageCache cache;
+    private readonly IMemoryCache _memoryCache;
+    private readonly Mock<ILogger<CompositeImageCache>> _loggerMock;
+    private readonly CompositeImageCache _cache;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CompositeImageCacheTests"/> class.
+    /// </summary>
     public CompositeImageCacheTests()
     {
-        this.memoryCache = new MemoryCache(new MemoryCacheOptions());
-        this.loggerMock = new Mock<ILogger<CompositeImageCache>>();
-        this.cache = new CompositeImageCache(this.memoryCache, this.loggerMock.Object);
+        _memoryCache = new MemoryCache(new MemoryCacheOptions());
+        _loggerMock = new Mock<ILogger<CompositeImageCache>>();
+        _cache = new CompositeImageCache(_memoryCache, _loggerMock.Object);
     }
 
+    /// <summary>
+    /// Verifies that Store returns a valid cache ID.
+    /// </summary>
     [Fact]
     public void Store_ReturnsValidCacheId()
     {
@@ -30,7 +36,7 @@ public class CompositeImageCacheTests
         var imageData = new byte[] { 1, 2, 3 };
 
         // Act
-        var cacheId = this.cache.Store(imageData);
+        var cacheId = _cache.Store(imageData);
 
         // Assert
         Assert.NotNull(cacheId);
@@ -38,6 +44,9 @@ public class CompositeImageCacheTests
         Assert.True(Guid.TryParse(cacheId, out _), "Cache ID should be a valid GUID");
     }
 
+    /// <summary>
+    /// Verifies that Store allows retrieval of stored data.
+    /// </summary>
     [Fact]
     public void Store_AllowsRetrievalOfStoredData()
     {
@@ -45,14 +54,17 @@ public class CompositeImageCacheTests
         var imageData = new byte[] { 1, 2, 3, 4, 5 };
 
         // Act
-        var cacheId = this.cache.Store(imageData);
-        var retrieved = this.cache.Retrieve(cacheId);
+        var cacheId = _cache.Store(imageData);
+        var retrieved = _cache.Retrieve(cacheId);
 
         // Assert
         Assert.NotNull(retrieved);
         Assert.Equal(imageData, retrieved);
     }
 
+    /// <summary>
+    /// Verifies that Store generates unique cache IDs for different data.
+    /// </summary>
     [Fact]
     public void Store_GeneratesUniqueCacheIds()
     {
@@ -61,38 +73,47 @@ public class CompositeImageCacheTests
         var imageData2 = new byte[] { 4, 5, 6 };
 
         // Act
-        var cacheId1 = this.cache.Store(imageData1);
-        var cacheId2 = this.cache.Store(imageData2);
+        var cacheId1 = _cache.Store(imageData1);
+        var cacheId2 = _cache.Store(imageData2);
 
         // Assert
         Assert.NotEqual(cacheId1, cacheId2);
     }
 
+    /// <summary>
+    /// Verifies that Retrieve returns null for a missing cache ID.
+    /// </summary>
     [Fact]
     public void Retrieve_ReturnsNullForMissingCacheId()
     {
         // Act
-        var retrieved = this.cache.Retrieve("non-existent-id");
+        var retrieved = _cache.Retrieve("non-existent-id");
 
         // Assert
         Assert.Null(retrieved);
     }
 
+    /// <summary>
+    /// Verifies that Remove prevents future retrieval of the data.
+    /// </summary>
     [Fact]
     public void Remove_PreventsFutureRetrieval()
     {
         // Arrange
         var imageData = new byte[] { 1, 2, 3 };
-        var cacheId = this.cache.Store(imageData);
+        var cacheId = _cache.Store(imageData);
 
         // Act
-        this.cache.Remove(cacheId);
-        var retrieved = this.cache.Retrieve(cacheId);
+        _cache.Remove(cacheId);
+        var retrieved = _cache.Retrieve(cacheId);
 
         // Assert
         Assert.Null(retrieved);
     }
 
+    /// <summary>
+    /// Verifies that items expire after their timeout.
+    /// </summary>
     [Fact]
     public void Store_WithExpiration_ExpiresAfterTimeout()
     {
@@ -102,7 +123,7 @@ public class CompositeImageCacheTests
         // Create a very short expiration time for testing
         using (var shortLivedCache = new MemoryCache(new MemoryCacheOptions()))
         {
-            var shortCache = new CompositeImageCache(shortLivedCache, this.loggerMock.Object);
+            var shortCache = new CompositeImageCache(shortLivedCache, _loggerMock.Object);
 
             // Act - Store with a very short TTL by mimicking what the cache does
             var cacheId = shortCache.Store(imageData);
@@ -117,6 +138,9 @@ public class CompositeImageCacheTests
         }
     }
 
+    /// <summary>
+    /// Verifies that stored data is correctly retrieved.
+    /// </summary>
     [Fact]
     public void Retrieve_WithValidCacheId_ReturnsOriginalData()
     {
@@ -124,8 +148,8 @@ public class CompositeImageCacheTests
         var imageData = new byte[] { 0x89, 0x50, 0x4E, 0x47 }; // PNG header
 
         // Act
-        var cacheId = this.cache.Store(imageData);
-        var retrieved = this.cache.Retrieve(cacheId);
+        var cacheId = _cache.Store(imageData);
+        var retrieved = _cache.Retrieve(cacheId);
 
         // Assert
         Assert.NotNull(retrieved);
@@ -136,6 +160,9 @@ public class CompositeImageCacheTests
         Assert.Equal(0x47, retrieved[3]);
     }
 
+    /// <summary>
+    /// Verifies that Store handles large data correctly.
+    /// </summary>
     [Fact]
     public void Store_WithLargeData_WorksCorrectly()
     {
@@ -147,8 +174,8 @@ public class CompositeImageCacheTests
         }
 
         // Act
-        var cacheId = this.cache.Store(largeData);
-        var retrieved = this.cache.Retrieve(cacheId);
+        var cacheId = _cache.Store(largeData);
+        var retrieved = _cache.Retrieve(cacheId);
 
         // Assert
         Assert.NotNull(retrieved);
@@ -156,13 +183,19 @@ public class CompositeImageCacheTests
         Assert.Equal(largeData, retrieved);
     }
 
+    /// <summary>
+    /// Verifies that Remove does not throw for a non-existent cache ID.
+    /// </summary>
     [Fact]
     public void Remove_WithNonExistentCacheId_DoesNotThrow()
     {
         // Act & Assert - Should not throw
-        this.cache.Remove("non-existent-id");
+        _cache.Remove("non-existent-id");
     }
 
+    /// <summary>
+    /// Verifies that multiple store/retrieve cycles work independently.
+    /// </summary>
     [Fact]
     public void MultipleStoreRetrieveCycles_WorkIndependently()
     {
@@ -172,13 +205,13 @@ public class CompositeImageCacheTests
         var data3 = new byte[] { 7, 8, 9 };
 
         // Act
-        var id1 = this.cache.Store(data1);
-        var id2 = this.cache.Store(data2);
-        var id3 = this.cache.Store(data3);
+        var id1 = _cache.Store(data1);
+        var id2 = _cache.Store(data2);
+        var id3 = _cache.Store(data3);
 
-        var retrieved1 = this.cache.Retrieve(id1);
-        var retrieved2 = this.cache.Retrieve(id2);
-        var retrieved3 = this.cache.Retrieve(id3);
+        var retrieved1 = _cache.Retrieve(id1);
+        var retrieved2 = _cache.Retrieve(id2);
+        var retrieved3 = _cache.Retrieve(id3);
 
         // Assert
         Assert.Equal(data1, retrieved1);
@@ -186,9 +219,9 @@ public class CompositeImageCacheTests
         Assert.Equal(data3, retrieved3);
 
         // Remove one and verify others are unaffected
-        this.cache.Remove(id2);
-        Assert.Equal(data1, this.cache.Retrieve(id1));
-        Assert.Null(this.cache.Retrieve(id2));
-        Assert.Equal(data3, this.cache.Retrieve(id3));
+        _cache.Remove(id2);
+        Assert.Equal(data1, _cache.Retrieve(id1));
+        Assert.Null(_cache.Retrieve(id2));
+        Assert.Equal(data3, _cache.Retrieve(id3));
     }
 }

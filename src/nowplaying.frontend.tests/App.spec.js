@@ -1,6 +1,6 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 import App from '../nowplaying/wwwroot/js/App.js';
 
 describe('App Component', () => {
@@ -11,6 +11,14 @@ describe('App Component', () => {
       ok: true,
       json: async () => ({ authenticated: false, registered: false, instance: null })
     });
+    
+    // Reset localStorage
+    localStorage.clear();
+
+    // Reset document state
+    document.documentElement.removeAttribute('data-theme');
+    vi.spyOn(document.documentElement, 'setAttribute');
+    vi.spyOn(document.documentElement, 'removeAttribute');
   });
 
   it('renders the app with header and navigation', () => {
@@ -66,5 +74,62 @@ describe('App Component', () => {
 
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
+  });
+
+  it('initializes theme from localStorage', () => {
+    localStorage.setItem('picoPreferredColorScheme', 'dark');
+    wrapper = mount(App);
+
+    expect(wrapper.vm.theme).toBe('dark');
+    expect(document.documentElement.setAttribute).toHaveBeenCalledWith('data-theme', 'dark');
+  });
+
+  it('sets theme and updates localStorage', () => {
+    wrapper = mount(App);
+    wrapper.vm.setTheme('light');
+
+    expect(wrapper.vm.theme).toBe('light');
+    expect(localStorage.getItem('picoPreferredColorScheme')).toBe('light');
+    expect(document.documentElement.setAttribute).toHaveBeenCalledWith('data-theme', 'light');
+
+    wrapper.vm.setTheme('auto');
+    expect(wrapper.vm.theme).toBe('auto');
+    expect(localStorage.getItem('picoPreferredColorScheme')).toBe('auto');
+    expect(document.documentElement.removeAttribute).toHaveBeenCalledWith('data-theme');
+  });
+
+  it('handles unauthorized event by redirecting to logout', () => {
+    // Mock window.location
+    const originalLocation = window.location;
+    delete window.location;
+    window.location = { href: '' };
+
+    wrapper = mount(App);
+    wrapper.vm.handleUnauthorized();
+
+    expect(window.location.href).toBe('/auth/logout');
+    window.location = originalLocation;
+  });
+
+  it('updates state on handleInstanceRegistered', () => {
+    wrapper = mount(App);
+    wrapper.vm.handleInstanceRegistered('https://instance.com');
+
+    expect(wrapper.vm.registered).toBe(true);
+    expect(wrapper.vm.instance).toBe('https://instance.com');
+  });
+
+  it('shows login button when registered but not authenticated', async () => {
+    global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ authenticated: false, registered: true, instance: 'https://instance.com' })
+    });
+
+    wrapper = mount(App);
+    await flushPromises();
+
+    expect(wrapper.vm.registered).toBe(true);
+    expect(wrapper.text()).toContain('Ready to Login');
+    expect(wrapper.find('a[href="/auth/login"]').exists()).toBe(true);
   });
 });

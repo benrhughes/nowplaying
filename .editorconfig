@@ -22,8 +22,21 @@ dotnet_diagnostic.SA1000.severity = none # new followed by space (target-typed n
 dotnet_diagnostic.SA1009.severity = none # parenthesis space (primary constructors)
 dotnet_diagnostic.SA1024.severity = none # colon space (primary constructors)
 dotnet_diagnostic.SA1018.severity = none # nullable space
+dotnet_diagnostic.SA1516.severity = none # elements must be separated by blank line 
 
 dotnet_diagnostic.IDE0005.severity = error # Unused usings
+dotnet_diagnostic.IDE1006.severity = error # Naming rule violations
+
+# Require private instance fields to start with an underscore and use camelCase
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+
+dotnet_naming_style.underscore_prefix_style.required_prefix = _
+dotnet_naming_style.underscore_prefix_style.capitalization = camel_case
+
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_prefix_style
+dotnet_naming_rule.private_fields_underscore.severity = error
 
 [src/nowplaying.tests/**.cs]
 # Relaxed rules for tests
@@ -33,5 +46,3 @@ dotnet_diagnostic.SA1203.severity = none # constant before fields
 dotnet_diagnostic.SA1107.severity = none # multiple statements on one line
 dotnet_diagnostic.SA1500.severity = none # braces on same line
 
-[src/nowplaying/Program.cs]
-dotnet_diagnostic.SA1516.severity = none
