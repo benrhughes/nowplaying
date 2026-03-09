@@ -21,7 +21,16 @@
 
 ## 🧪 Testing
 - **Framework**: xUnit and Moq.
-- **Coverage**: ALWAYS add unit test coverage for new code changes in the `bcmasto.tests` project.
+- **Coverage**: ALWAYS add unit test coverage for new code changes in the `bcmasto.tests` project and strive to keep overall coverage above **80 %**.  After running `dotnet test` you can generate a report with:
+  ```bash
+  cd src
+  dotnet test nowplaying.tests/nowplaying.tests.csproj --collect:"XPlat Code Coverage" --settings .runsettings
+  # results are written to TestResults/<GUID>/coverage.cobertura.xml
+
+  # Use the helper script to see a summary of coverage by class
+  python3 coverage_summary.py nowplaying.tests/TestResults/<GUID>/coverage.cobertura.xml
+  ```
+  Tools like [ReportGenerator](https://github.com/danielpalme/ReportGenerator) or `coverlet`’s CLI can convert the XML into readable HTML.  Review metrics before merging changes.
 - **Mocks**: When testing services that use `HttpClient`, use `MockHttpMessageHandler` and a real `HttpClient` instance rather than mocking `IHttpClientFactory`.
 - **Frontend Tests**: Run `npm test -- --run` (NOT just `npm test`) to exit cleanly after tests complete. Without `--run`, vitest stays in watch mode and will hang.
 

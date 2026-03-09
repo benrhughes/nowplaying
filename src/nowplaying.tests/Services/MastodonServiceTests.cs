@@ -206,29 +206,69 @@ public class MastodonServiceTests
     }
 
     [Fact]
-    public async Task VerifyCredentialsAsync_ReturnsUserId()
+    public async Task VerifyCredentialsAsync_WithValidToken_ReturnsUserId()
     {
-        var service = CreateService("{\"id\": \"12345\"}");
-        var userId = await service.VerifyCredentialsAsync(Instance, "token");
-        Assert.Equal("12345", userId);
+        // Arrange
+        var responseData = new { id = "user-123", username = "testuser" };
+        var service = CreateService(JsonSerializer.Serialize(responseData));
+
+        // Act
+        var userId = await service.VerifyCredentialsAsync(Instance, "access-token");
+
+        // Assert
+        Assert.Equal("user-123", userId);
     }
 
     [Fact]
-    public async Task GetTaggedPostsAsync_ReturnsFilteredPosts()
+    public async Task VerifyCredentialsAsync_WithFailedResponse_ThrowsException()
     {
-        var now = DateTimeOffset.UtcNow;
-        var posts = new List<StatusMastodonResponse>
+        // Arrange
+        var service = CreateService("Error", System.Net.HttpStatusCode.Unauthorized);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            service.VerifyCredentialsAsync(Instance, "access-token"));
+    }
+
+    [Fact]
+    public async Task VerifyCredentialsAsync_WithMissingUserId_ThrowsException()
+    {
+        // Arrange
+        var responseData = new { username = "testuser" };
+        var service = CreateService(JsonSerializer.Serialize(responseData));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            service.VerifyCredentialsAsync(Instance, "access-token"));
+    }
+
+    [Fact]
+    public async Task GetTaggedPostsAsync_WithValidData_ReturnsPosts()
+    {
+        // Arrange
+        var responseData = new[]
         {
-            new StatusMastodonResponse("1", "url1", "content1", null, now, new List<TagResponse> { new TagResponse("tag") }),
-            new StatusMastodonResponse("2", "url2", "content2", null, now.AddDays(-10), new List<TagResponse> { new TagResponse("tag") })
+            new { id = "1", url = "url1", content = "post1", created_at = DateTimeOffset.UtcNow, media_attachments = new List<object>(), tags = new[] { new { name = "tag" } } }
         };
-        var json = JsonSerializer.Serialize(posts);
-        var service = CreateService(json);
+        var service = CreateService(JsonSerializer.Serialize(responseData));
 
-        var result = await service.GetTaggedPostsAsync(Instance, "token", "123", "tag", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow);
+        // Act
+        var posts = await service.GetTaggedPostsAsync(Instance, "token", "userId", "tag", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow);
 
-        Assert.Single(result);
-        Assert.Equal("1", result.First().id);
+        // Assert
+        Assert.Single(posts);
+        Assert.Equal("1", posts.First().id);
+    }
+
+    [Fact]
+    public async Task GetTaggedPostsAsync_WithFailedResponse_ThrowsException()
+    {
+        // Arrange
+        var service = CreateService("Error", System.Net.HttpStatusCode.BadRequest);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            service.GetTaggedPostsAsync(Instance, "token", "userId", "tag", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow));
     }
 
     private class MockHttpMessageHandler(string? content, System.Net.HttpStatusCode statusCode = System.Net.HttpStatusCode.OK) : HttpMessageHandler

@@ -98,7 +98,7 @@ export default {
     },
     computed: {
         postText() {
-            return `${this.tag} Review: ${this.since} to ${this.until}`;
+            return `${this.tag}list Review: ${this.since} to ${this.until}`;
         },
         altText() {
             return this.posts.map((p, i) => `${i + 1}. ${p.altText}`).join('\n');

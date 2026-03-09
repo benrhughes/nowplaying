@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NowPlaying.Endpoints;
@@ -117,6 +118,39 @@ public class PostingEndpointsTests
     }
 
     [Fact]
+    public async Task Scrape_ReturnsInternalError_OnGeneralException()
+    {
+        // Arrange
+        var request = new ScrapeRequest { Url = "https://artist.bandcamp.com/album/test" };
+        _bandcampServiceMock.Setup(b => b.ScrapeAsync(It.IsAny<string>()))
+            .ThrowsAsync(new Exception("Generic error"));
+
+        // Act
+        var result = await CreateEndpoints().Scrape(_httpContextMock.Object, request);
+
+        // Assert
+        Assert.IsType<StatusCodeHttpResult>(result);
+        var statusCodeResult = (StatusCodeHttpResult)result;
+        Assert.Equal(StatusCodes.Status500InternalServerError, statusCodeResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task Scrape_ReturnsBadRequest_OnHttpRequestException()
+    {
+        // Arrange
+        var request = new ScrapeRequest { Url = "https://artist.bandcamp.com/album/test" };
+        _bandcampServiceMock.Setup(b => b.ScrapeAsync(It.IsAny<string>()))
+            .ThrowsAsync(new HttpRequestException("Network error"));
+
+        // Act
+        var result = await CreateEndpoints().Scrape(_httpContextMock.Object, request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Contains("Failed to scrape URL", badRequest.Value!.Error);
+    }
+
+    [Fact]
     public async Task Post_WithValidRequest_ReturnsResult()
     {
         // Arrange
@@ -138,6 +172,41 @@ public class PostingEndpointsTests
 
         // Assert
         Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task Post_ReturnsInternalError_OnGeneralException()
+    {
+        // Arrange
+        var request = new PostRequest { Text = "text", ImageUrl = "http://img.jpg" };
+        SetupAuthenticatedUser("https://mastodon.social", "token");
+        _imageServiceMock.Setup(i => i.DownloadImageAsync(It.IsAny<string>()))
+            .ThrowsAsync(new Exception("Generic error"));
+
+        // Act
+        var result = await CreateEndpoints().Post(_httpContextMock.Object, request);
+
+        // Assert
+        Assert.IsType<StatusCodeHttpResult>(result);
+        var statusCodeResult = (StatusCodeHttpResult)result;
+        Assert.Equal(StatusCodes.Status500InternalServerError, statusCodeResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task Post_ReturnsBadRequest_OnHttpRequestException()
+    {
+        // Arrange
+        var request = new PostRequest { Text = "text", ImageUrl = "http://img.jpg" };
+        SetupAuthenticatedUser("https://mastodon.social", "token");
+        _imageServiceMock.Setup(i => i.DownloadImageAsync(It.IsAny<string>()))
+            .ThrowsAsync(new HttpRequestException("Network error"));
+
+        // Act
+        var result = await CreateEndpoints().Post(_httpContextMock.Object, request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Contains("Failed to post", badRequest.Value!.Error);
     }
 
     [Fact]

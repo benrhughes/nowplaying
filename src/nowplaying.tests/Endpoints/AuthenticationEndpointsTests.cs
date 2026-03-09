@@ -1,4 +1,6 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -202,12 +204,11 @@ public class AuthenticationEndpointsTests
         // Arrange
         SetupSessionString("instance", "mastodon.social");
         SetupSessionString("oauth_state", "state");
-
         _registrationStoreMock.Setup(r => r.TryGet("https://mastodon.social", out It.Ref<RegistrationInfo?>.IsAny))
             .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", "client-secret", "http://localhost:3000/auth/callback"); return true; });
 
         _mastodonServiceMock.Setup(m => m.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-            .ThrowsAsync(new HttpRequestException("Service error"));
+            .ThrowsAsync(new HttpRequestException("OAuth failed"));
 
         // Act
         var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "state");
@@ -217,7 +218,72 @@ public class AuthenticationEndpointsTests
     }
 
     [Fact]
-    public async Task Logout_ClearsSessionAndReturnsResult()
+    public async Task Callback_WithInvalidState_ReturnsBadRequest()
+    {
+        // Arrange
+        SetupSessionString("oauth_state", "valid_state");
+
+        // Act
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "wrong_state");
+
+        // Assert
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task Callback_WithGeneralException_Returns500()
+    {
+        // Arrange
+        SetupSessionString("instance", "mastodon.social");
+        SetupSessionString("oauth_state", "state");
+        _registrationStoreMock.Setup(r => r.TryGet("https://mastodon.social", out It.Ref<RegistrationInfo?>.IsAny))
+            .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", "client-secret", "http://localhost:3000/auth/callback"); return true; });
+
+        _mastodonServiceMock.Setup(m => m.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ThrowsAsync(new Exception("Unknown error"));
+
+        // Act
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "state");
+
+        // Assert
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public void Status_WhenAuthenticated_ReturnsStatus()
+    {
+        // Arrange
+        var claims = new[] { new Claim("instance", "https://mastodon.social") };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var user = new ClaimsPrincipal(identity);
+        _httpContextMock.SetupGet(h => h.User).Returns(user);
+        _registrationStoreMock.Setup(r => r.Has(It.IsAny<string>())).Returns(true);
+
+        // Act
+        var result = CreateEndpoints().Status(_httpContextMock.Object);
+
+        // Assert
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public void Status_WhenNotAuthenticated_ReturnsStatus()
+    {
+        // Arrange
+        var user = new ClaimsPrincipal(new ClaimsIdentity());
+        _httpContextMock.SetupGet(h => h.User).Returns(user);
+        SetupSessionString("instance", "mastodon.social");
+        _registrationStoreMock.Setup(r => r.Has("https://mastodon.social")).Returns(true);
+
+        // Act
+        var result = CreateEndpoints().Status(_httpContextMock.Object);
+
+        // Assert
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task Logout_ClearsSessionAndSignsOut()
     {
         // Arrange
         _authServiceMock.Setup(a => a.SignOutAsync(It.IsAny<HttpContext>(), It.IsAny<string>(), It.IsAny<Microsoft.AspNetCore.Authentication.AuthenticationProperties>()))
@@ -229,5 +295,151 @@ public class AuthenticationEndpointsTests
         // Assert
         Assert.NotNull(result);
         _sessionMock.Verify(s => s.Clear(), Times.Once);
+    }
+
+    [Fact]
+    public async Task Register_WithValidInstance_ReturnsResult()
+    {
+        // Arrange
+        var request = new RegisterRequest { Instance = "mastodon.social" };
+        _mastodonServiceMock.Setup(m => m.RegisterAppAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(("client-id", "client-secret"));
+
+        // Act
+        var result = await CreateEndpoints().Register(_httpContextMock.Object, request);
+
+        // Assert
+        Assert.NotNull(result);
+        _registrationStoreMock.Verify(r => r.Add("https://mastodon.social", "client-id", "client-secret", _config.RedirectUri), Times.Once);
+    }
+
+    [Fact]
+    public async Task Register_WithInvalidInstance_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new RegisterRequest { Instance = string.Empty }; // Invalid instance
+
+        // Act
+        var result = await CreateEndpoints().Register(_httpContextMock.Object, request);
+
+        // Assert
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task Register_WithServiceError_ReturnsBadRequest()
+    {
+        // Arrange
+        var request = new RegisterRequest { Instance = "mastodon.social" };
+        _mastodonServiceMock.Setup(m => m.RegisterAppAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ThrowsAsync(new HttpRequestException("Registration failed"));
+
+        // Act
+        var result = await CreateEndpoints().Register(_httpContextMock.Object, request);
+
+        // Assert
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task Register_WithGeneralException_Returns500()
+    {
+        // Arrange
+        var request = new RegisterRequest { Instance = "mastodon.social" };
+        _mastodonServiceMock.Setup(m => m.RegisterAppAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ThrowsAsync(new Exception("Unknown error"));
+
+        // Act
+        var result = await CreateEndpoints().Register(_httpContextMock.Object, request);
+
+        // Assert
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task Callback_WithEmptyCode_ReturnsBadRequest()
+    {
+        // Arrange & Act
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, string.Empty, "state");
+
+        // Assert
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task Callback_WithRegistrationInfoNull_ReturnsBadRequest()
+    {
+        // Arrange
+        SetupSessionString("instance", "mastodon.social");
+        SetupSessionString("oauth_state", "state");
+
+        _registrationStoreMock.Setup(r => r.TryGet(It.IsAny<string>(), out It.Ref<RegistrationInfo?>.IsAny))
+            .Returns((string i, out RegistrationInfo? info) => { info = null; return true; });
+
+        // Act
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "state");
+
+        // Assert
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task Callback_WithNullAccessToken_HandlesGracefully()
+    {
+        // Arrange
+        SetupSessionString("instance", "mastodon.social");
+        SetupSessionString("oauth_state", "valid_state");
+        _registrationStoreMock.Setup(r => r.TryGet("https://mastodon.social", out It.Ref<RegistrationInfo?>.IsAny))
+            .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", "client-secret", "http://localhost:3000/auth/callback"); return true; });
+
+        _mastodonServiceMock.Setup(m => m.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((string)null!);
+
+        _mastodonServiceMock.Setup(m => m.VerifyCredentialsAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync("user-id");
+
+        _authServiceMock.Setup(a => a.SignInAsync(It.IsAny<HttpContext>(), It.IsAny<string>(), It.IsAny<System.Security.Claims.ClaimsPrincipal>(), It.IsAny<Microsoft.AspNetCore.Authentication.AuthenticationProperties>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "valid_state");
+
+        // Assert
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task Callback_WithVerifyCredentialsError_ReturnsBadRequest()
+    {
+        // Arrange
+        SetupSessionString("instance", "mastodon.social");
+        SetupSessionString("oauth_state", "state");
+        _registrationStoreMock.Setup(r => r.TryGet("https://mastodon.social", out It.Ref<RegistrationInfo?>.IsAny))
+            .Returns((string i, out RegistrationInfo? info) => { info = new RegistrationInfo("client-id", "client-secret", "http://localhost:3000/auth/callback"); return true; });
+
+        _mastodonServiceMock.Setup(m => m.GetAccessTokenAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync("token");
+
+        _mastodonServiceMock.Setup(m => m.VerifyCredentialsAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ThrowsAsync(new HttpRequestException("Verification failed"));
+
+        // Act
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", "state");
+
+        // Assert
+        Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task Callback_WithNullState_ReturnsBadRequest()
+    {
+        // Arrange
+        SetupSessionString("oauth_state", "valid_state");
+
+        // Act
+        var result = await CreateEndpoints().Callback(_httpContextMock.Object, "auth-code", null);
+
+        // Assert
+        Assert.NotNull(result);
     }
 }

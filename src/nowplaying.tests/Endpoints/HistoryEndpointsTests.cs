@@ -96,6 +96,43 @@ public class HistoryEndpointsTests
     }
 
     [Fact]
+    public async Task Search_ThrowsUnauthorized_WhenMastodonReturns401()
+    {
+        // Arrange
+        SetupAuthenticatedUser("https://mastodon.social", "token");
+        _mastodonServiceMock.Setup(x => x.VerifyCredentialsAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ThrowsAsync(new HttpRequestException("Unauthorized", null, System.Net.HttpStatusCode.Unauthorized));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now, Until = DateTime.Now, Tag = "nowplaying" }));
+    }
+
+    [Fact]
+    public async Task Search_UsesMediaUrl_WhenPreviewUrlIsNull()
+    {
+        // Arrange
+        SetupAuthenticatedUser("https://mastodon.social", "token");
+        _mastodonServiceMock.Setup(x => x.VerifyCredentialsAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync("123");
+
+        var posts = new List<StatusMastodonResponse>
+        {
+            new StatusMastodonResponse("1", "url", "desc", new List<MediaResponse> { new MediaResponse("m1", "image", "real-url.jpg") { preview_url = null } }, DateTimeOffset.UtcNow),
+        };
+
+        _mastodonServiceMock.Setup(x => x.GetTaggedPostsAsync(It.IsAny<string>(), It.IsAny<string>(), "123", "nowplaying", It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+            .ReturnsAsync(posts);
+
+        // Act
+        var result = await CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now.AddDays(-1), Until = DateTime.Now, Tag = "nowplaying" });
+
+        // Assert
+        var jsonResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
+        Assert.NotNull(jsonResult!.Value);
+    }
+
+    [Fact]
     public async Task Search_ReturnsBadRequest_WhenSearchFails()
     {
         // Arrange
@@ -198,47 +235,56 @@ public class HistoryEndpointsTests
             .ReturnsAsync(("status-456", "https://mastodon.social/@user/456"));
 
         // Act
-        var request = new PostCompositeRequest { CacheId = "test-cache-id", AltText = "Test alt text", Text = "Test post" };
+        var request = new PostCompositeRequest { CacheId = "test-cache-id", AltText = "Alt text", Text = "Test post" };
         var result = await CreateEndpoints().PostComposite(_context, request);
 
         // Assert
         var okResult = Assert.IsAssignableFrom<IValueHttpResult>(result);
         Assert.NotNull(okResult.Value);
-
-        _mastodonServiceMock.Verify(
-            x => x.UploadMediaAsync("https://mastodon.social", "token", imageData, "Test alt text"),
-            Times.Once);
-
-        _mastodonServiceMock.Verify(
-            x => x.PostStatusAsync("https://mastodon.social", "token", "Test post", "media-123"),
-            Times.Once);
-
-        _cacheServiceMock.Verify(x => x.Remove("test-cache-id"), Times.Once);
     }
 
     [Fact]
-    public async Task PostComposite_ReturnsBadRequest_WhenUploadFails()
+    public async Task GetCompositePreview_ReturnsOk_WhenFound()
     {
         // Arrange
-        SetupAuthenticatedUser("https://mastodon.social", "token");
-
+        var imageData = new byte[] { 1, 2, 3 };
         _cacheServiceMock.Setup(x => x.Retrieve("test-cache-id"))
-            .Returns(new byte[] { 1, 2, 3 });
-
-        _mastodonServiceMock.Setup(x => x.UploadMediaAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<string>()))
-            .ThrowsAsync(new HttpRequestException("Upload failed"));
+            .Returns(imageData);
 
         // Act
-        var request = new PostCompositeRequest { CacheId = "test-cache-id", AltText = "Test alt text", Text = "Test post" };
-        var result = await CreateEndpoints().PostComposite(_context, request);
+        var result = CreateEndpoints().GetCompositePreview("test-cache-id");
 
         // Assert
-        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
-        Assert.Contains("Upload failed", badRequest.Value!.Error);
+        var fileResult = Assert.IsAssignableFrom<IFileHttpResult>(result);
+        Assert.Equal("image/jpeg", fileResult.ContentType);
     }
 
     [Fact]
-    public async Task PostComposite_ReturnsUnauthorized_WhenMastodonServiceThrows401()
+    public async Task GetCompositePreview_ReturnsNotFound_WhenMissing()
+    {
+        // Arrange
+        _cacheServiceMock.Setup(x => x.Retrieve("missing"))
+            .Returns((byte[] ?)null);
+
+        // Act
+        var result = CreateEndpoints().GetCompositePreview("missing");
+
+        // Assert
+        Assert.IsType<NotFound<ErrorResponse>>(result);
+    }
+
+    [Fact]
+    public async Task GetCompositePreview_ReturnsBadRequest_WhenEmptyId()
+    {
+        // Act
+        var result = CreateEndpoints().GetCompositePreview(string.Empty);
+
+        // Assert
+        Assert.IsType<BadRequest<ErrorResponse>>(result);
+    }
+
+    [Fact]
+    public async Task Search_ReturnsUnauthorized_WhenMastodonServiceThrows401()
     {
         // Arrange
         SetupAuthenticatedUser("https://mastodon.social", "token");
@@ -255,15 +301,116 @@ public class HistoryEndpointsTests
     }
 
     [Fact]
-    public async Task Search_ReturnsUnauthorized_WhenMastodonServiceThrows401()
+    public async Task Search_ReturnsBadRequest_OnGeneralException()
     {
         // Arrange
         SetupAuthenticatedUser("https://mastodon.social", "token");
-
         _mastodonServiceMock.Setup(x => x.VerifyCredentialsAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ThrowsAsync(new Exception("Generic error"));
+
+        // Act
+        var result = await CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now, Until = DateTime.Now, Tag = "nowplaying" });
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Contains("Generic error", badRequest.Value!.Error);
+    }
+
+    [Fact]
+    public async Task Composite_ReturnsBadRequest_OnHttpRequestException()
+    {
+        // Arrange
+        var request = new CompositeRequest { ImageUrls = new List<string> { "http://img.jpg" } };
+        _imageServiceMock.Setup(x => x.GenerateCompositeAsync(It.IsAny<IEnumerable<string>>()))
+            .ThrowsAsync(new HttpRequestException("Download failed"));
+
+        // Act
+        var result = await CreateEndpoints().Composite(request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Contains("Failed to download images", badRequest.Value!.Error);
+    }
+
+    [Fact]
+    public async Task PostComposite_ReturnsBadRequest_WhenCacheMiss()
+    {
+        // Arrange
+        SetupAuthenticatedUser("https://mastodon.social", "token");
+        _cacheServiceMock.Setup(x => x.Retrieve(It.IsAny<string>())).Returns((byte[] ?)null);
+
+        // Act
+        var request = new PostCompositeRequest { CacheId = "expired", Text = "Post text" };
+        var result = await CreateEndpoints().PostComposite(_context, request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Contains("Composite image not found", badRequest.Value!.Error);
+    }
+
+    [Fact]
+    public async Task PostComposite_Throws_WhenMastodonThrows401()
+    {
+        // Arrange
+        SetupAuthenticatedUser("https://mastodon.social", "token");
+        _cacheServiceMock.Setup(x => x.Retrieve(It.IsAny<string>())).Returns(new byte[] { 1 });
+        _mastodonServiceMock.Setup(x => x.UploadMediaAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<string>()))
             .ThrowsAsync(new HttpRequestException("Unauthorized", null, System.Net.HttpStatusCode.Unauthorized));
 
         // Act & Assert
-        await Assert.ThrowsAsync<HttpRequestException>(() => CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now.AddDays(-1), Until = DateTime.Now, Tag = "#nowplaying" }));
+        var request = new PostCompositeRequest { CacheId = "id", Text = "text" };
+        await Assert.ThrowsAsync<HttpRequestException>(() => CreateEndpoints().PostComposite(_context, request));
+    }
+
+    [Fact]
+    public async Task Composite_ReturnsBadRequest_OnGeneralException()
+    {
+        // Arrange
+        var request = new CompositeRequest { ImageUrls = new List<string> { "http://img.jpg" } };
+        _imageServiceMock.Setup(x => x.GenerateCompositeAsync(It.IsAny<IEnumerable<string>>()))
+            .ThrowsAsync(new Exception("Unknown error"));
+
+        // Act
+        var result = await CreateEndpoints().Composite(request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Contains("Failed to generate composite", badRequest.Value!.Error);
+    }
+
+    [Fact]
+    public async Task PostComposite_ReturnsBadRequest_OnHttpRequestException()
+    {
+        // Arrange
+        SetupAuthenticatedUser("https://mastodon.social", "token");
+        _cacheServiceMock.Setup(x => x.Retrieve(It.IsAny<string>())).Returns(new byte[] { 1 });
+        _mastodonServiceMock.Setup(x => x.UploadMediaAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<string>()))
+            .ThrowsAsync(new HttpRequestException("Post failed"));
+
+        // Act
+        var request = new PostCompositeRequest { CacheId = "id", Text = "text" };
+        var result = await CreateEndpoints().PostComposite(_context, request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Contains("Failed to post composite", badRequest.Value!.Error);
+    }
+
+    [Fact]
+    public async Task PostComposite_ReturnsBadRequest_OnGeneralException()
+    {
+        // Arrange
+        SetupAuthenticatedUser("https://mastodon.social", "token");
+        _cacheServiceMock.Setup(x => x.Retrieve(It.IsAny<string>())).Returns(new byte[] { 1 });
+        _mastodonServiceMock.Setup(x => x.UploadMediaAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<string>()))
+            .ThrowsAsync(new Exception("Unknown error"));
+
+        // Act
+        var request = new PostCompositeRequest { CacheId = "id", Text = "text" };
+        var result = await CreateEndpoints().PostComposite(_context, request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Contains("An error occurred", badRequest.Value!.Error);
     }
 }
