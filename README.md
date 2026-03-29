@@ -1,5 +1,9 @@
 # NowPlaying: Bandcamp to Mastodon
 
+[![CI](https://github.com/benrhughes/nowplaying/actions/workflows/ci.yml/badge.svg)](https://github.com/benrhughes/nowplaying/actions/workflows/ci.yml)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Mastodon](https://img.shields.io/badge/Mastodon-Join-purple.svg)](https://joinmastodon.org)
+
 A lightweight, self-hosted tool that lets you easily post Bandcamp albums to Mastodon with rich metadata and cover art.
 
 ![Screenshotof the app](image.png)
