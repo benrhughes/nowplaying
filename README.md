@@ -1,7 +1,6 @@
 # NowPlaying: Bandcamp to Mastodon
 
 [![CI](https://github.com/benrhughes/nowplaying/actions/workflows/ci.yml/badge.svg)](https://github.com/benrhughes/nowplaying/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/benrhughes/444747444747444747444747/raw/nowplaying-coverage.json)](https://github.com/benrhughes/nowplaying/actions)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Mastodon](https://img.shields.io/badge/Mastodon-Join-purple.svg)](https://joinmastodon.org)
 
