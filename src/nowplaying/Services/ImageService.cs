@@ -32,30 +32,40 @@ public class ImageService(HttpClient httpClient, ILogger<ImageService> logger)
             return Array.Empty<byte>();
         }
 
-        var images = new List<Image>();
+        var images = new Image?[urls.Count];
+        var tasks = new List<Task>();
+
         try
         {
-            foreach (var url in urls)
+            for (int i = 0; i < urls.Count; i++)
             {
-                try
+                var index = i;
+                var url = urls[i];
+                tasks.Add(Task.Run(async () =>
                 {
-                    var data = await DownloadImageAsync(url);
-                    var img = Image.Load(data);
-                    images.Add(img);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Failed to download or load image from {url}", url);
-                }
+                    try
+                    {
+                        var data = await DownloadImageAsync(url);
+                        images[index] = Image.Load(data);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to download or load image from {url}", url);
+                    }
+                }));
             }
 
-            if (images.Count == 0)
+            await Task.WhenAll(tasks);
+
+            var validImages = images.Where(img => img != null).Cast<Image>().ToList();
+
+            if (validImages.Count == 0)
             {
                 return Array.Empty<byte>();
             }
 
             const int CellSize = 300;
-            int count = images.Count;
+            int count = validImages.Count;
 
             // Calculate grid size (aim for square-ish)
             int cols = (int)Math.Ceiling(Math.Sqrt(count));
@@ -66,7 +76,7 @@ public class ImageService(HttpClient httpClient, ILogger<ImageService> logger)
 
             for (int i = 0; i < count; i++)
             {
-                var img = images[i];
+                var img = validImages[i];
                 img.Mutate(x => x.Resize(new ResizeOptions
                 {
                     Size = new Size(CellSize, CellSize),
@@ -87,7 +97,7 @@ public class ImageService(HttpClient httpClient, ILogger<ImageService> logger)
         {
             foreach (var img in images)
             {
-                img.Dispose();
+                img?.Dispose();
             }
         }
     }

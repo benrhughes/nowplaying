@@ -48,5 +48,5 @@ public class AppConfig
     /// </summary>
     [Range(1, 300)]
     [ConfigurationKeyName("HTTP_TIMEOUT_SECONDS")]
-    public int HttpTimeoutSeconds { get; set; } = 15;
+    public int HttpTimeoutSeconds { get; set; } = 60;
 }

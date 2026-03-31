@@ -44,6 +44,7 @@ public class HistoryEndpoints(
                     p.CreatedAt,
                     p.MediaAttachments![0].preview_url ?? p.MediaAttachments![0].url,
                     p.content.ExtractFirstLineAsAltText()))
+                .Reverse()
                 .ToList();
 
             return Results.Ok(images);

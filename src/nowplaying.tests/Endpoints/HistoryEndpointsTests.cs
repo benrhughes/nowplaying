@@ -92,7 +92,7 @@ public class HistoryEndpointsTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Fact]
-    public async Task Search_ReturnsOk_WithPosts()
+    public async Task Search_ReturnsOk_WithPosts_InChronologicalOrder()
     {
         // Arrange
         SetupAuthenticatedUser("https://mastodon.social", "token");
@@ -102,7 +102,8 @@ public class HistoryEndpointsTests
 
         var posts = new List<StatusMastodonResponse>
         {
-            new StatusMastodonResponse("1", "url", "desc", new List<MediaResponse> { new MediaResponse("m1", "image", "img.jpg") }, DateTimeOffset.UtcNow),
+            new StatusMastodonResponse("2", "url2", "desc2", new List<MediaResponse> { new MediaResponse("m2", "image", "img2.jpg") }, DateTimeOffset.UtcNow),
+            new StatusMastodonResponse("1", "url1", "desc1", new List<MediaResponse> { new MediaResponse("m1", "image", "img1.jpg") }, DateTimeOffset.UtcNow.AddMinutes(-5)),
         };
 
         _mastodonServiceMock.Setup(x => x.GetTaggedPostsAsync(It.IsAny<string>(), It.IsAny<string>(), "123", "nowplaying", It.IsAny<DateTime>(), It.IsAny<DateTime>()))
@@ -114,10 +115,13 @@ public class HistoryEndpointsTests
         // Assert
         var okResult = Assert.IsType<Ok<List<HistorySearchResponse>>>(result);
         Assert.NotNull(okResult.Value);
-        Assert.Single(okResult.Value);
-        var post = okResult.Value[0];
-        Assert.Equal("1", post.PostId);
-        Assert.Equal("img.jpg", post.ImageUrl);
+        Assert.Equal(2, okResult.Value.Count);
+
+        // Assert they are returned in chronological order (reversed from the mock's reverse-chronological order)
+        Assert.Equal("1", okResult.Value[0].PostId);
+        Assert.Equal("img1.jpg", okResult.Value[0].ImageUrl);
+        Assert.Equal("2", okResult.Value[1].PostId);
+        Assert.Equal("img2.jpg", okResult.Value[1].ImageUrl);
     }
 
     /// <summary>
