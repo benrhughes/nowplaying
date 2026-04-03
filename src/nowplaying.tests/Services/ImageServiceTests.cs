@@ -25,7 +25,8 @@ public class ImageServiceTests
         var handler = new MockHttpMessageHandler(content);
         var client = new HttpClient(handler);
         var loggerMock = new Mock<ILogger<ImageService>>();
-        var service = new ImageService(client, loggerMock.Object);
+        var appConfig = new NowPlaying.Models.AppConfig();
+        var service = new ImageService(client, loggerMock.Object, appConfig);
 
         // Act
         var result = await service.DownloadImageAsync("https://example.com/image.jpg");
@@ -44,7 +45,8 @@ public class ImageServiceTests
         var handler = new MockHttpMessageHandler(Array.Empty<byte>());
         var client = new HttpClient(handler);
         var loggerMock = new Mock<ILogger<ImageService>>();
-        var service = new ImageService(client, loggerMock.Object);
+        var appConfig = new NowPlaying.Models.AppConfig();
+        var service = new ImageService(client, loggerMock.Object, appConfig);
 
         var result = await service.GenerateCompositeAsync(new List<string>());
 
@@ -70,7 +72,8 @@ public class ImageServiceTests
         var handler = new MockHttpMessageHandler(imageBytes);
         var client = new HttpClient(handler);
         var loggerMock = new Mock<ILogger<ImageService>>();
-        var service = new ImageService(client, loggerMock.Object);
+        var appConfig = new NowPlaying.Models.AppConfig();
+        var service = new ImageService(client, loggerMock.Object, appConfig);
 
         var urls = new List<string> { "http://example.com/1.jpg" };
 
@@ -91,7 +94,8 @@ public class ImageServiceTests
         var handler = new MockHttpMessageHandler(Array.Empty<byte>(), System.Net.HttpStatusCode.NotFound);
         var client = new HttpClient(handler);
         var loggerMock = new Mock<ILogger<ImageService>>();
-        var service = new ImageService(client, loggerMock.Object);
+        var appConfig = new NowPlaying.Models.AppConfig();
+        var service = new ImageService(client, loggerMock.Object, appConfig);
 
         var urls = new List<string> { "https://example.com/missing.jpg" };
 
@@ -119,7 +123,7 @@ public class ImageServiceTests
     {
         var client = new HttpClient();
         var loggerMock = new Mock<ILogger<ImageService>>();
-        var service = new ImageService(client, loggerMock.Object);
+        var service = new ImageService(client, loggerMock.Object, new NowPlaying.Models.AppConfig());
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("not-a-url"));
     }
@@ -133,7 +137,7 @@ public class ImageServiceTests
     {
         var client = new HttpClient();
         var loggerMock = new Mock<ILogger<ImageService>>();
-        var service = new ImageService(client, loggerMock.Object);
+        var service = new ImageService(client, loggerMock.Object, new NowPlaying.Models.AppConfig());
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("ftp://example.com"));
     }
@@ -147,7 +151,7 @@ public class ImageServiceTests
     {
         var client = new HttpClient();
         var loggerMock = new Mock<ILogger<ImageService>>();
-        var service = new ImageService(client, loggerMock.Object);
+        var service = new ImageService(client, loggerMock.Object, new NowPlaying.Models.AppConfig());
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("http://localhost"));
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("http://127.0.0.1"));
@@ -162,7 +166,7 @@ public class ImageServiceTests
     {
         var client = new HttpClient();
         var loggerMock = new Mock<ILogger<ImageService>>();
-        var service = new ImageService(client, loggerMock.Object);
+        var service = new ImageService(client, loggerMock.Object, new NowPlaying.Models.AppConfig());
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("http://192.168.1.1"));
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("http://10.0.0.1"));
@@ -177,7 +181,7 @@ public class ImageServiceTests
     {
         var client = new HttpClient();
         var loggerMock = new Mock<ILogger<ImageService>>();
-        var service = new ImageService(client, loggerMock.Object);
+        var service = new ImageService(client, loggerMock.Object, new NowPlaying.Models.AppConfig());
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("http://172.16.0.1"));
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("http://169.254.1.1"));
@@ -192,7 +196,7 @@ public class ImageServiceTests
     {
         var client = new HttpClient();
         var loggerMock = new Mock<ILogger<ImageService>>();
-        var service = new ImageService(client, loggerMock.Object);
+        var service = new ImageService(client, loggerMock.Object, new NowPlaying.Models.AppConfig());
 
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("http://[::1]"));
     }
@@ -206,7 +210,7 @@ public class ImageServiceTests
     {
         var client = new HttpClient();
         var loggerMock = new Mock<ILogger<ImageService>>();
-        var service = new ImageService(client, loggerMock.Object);
+        var service = new ImageService(client, loggerMock.Object, new NowPlaying.Models.AppConfig());
 
         // A host that hopefully doesn't exist
         await Assert.ThrowsAsync<ArgumentException>(() => service.DownloadImageAsync("http://this.does.not.exist.example.invalid"));
@@ -223,7 +227,7 @@ public class ImageServiceTests
         var handler = new MockHttpMessageHandler(new byte[] { 1, 2, 3 }); // Invalid image data
         var client = new HttpClient(handler);
         var loggerMock = new Mock<ILogger<ImageService>>();
-        var service = new ImageService(client, loggerMock.Object);
+        var service = new ImageService(client, loggerMock.Object, new NowPlaying.Models.AppConfig());
 
         var urls = new List<string> { "https://example.com/bad-image.jpg" };
 

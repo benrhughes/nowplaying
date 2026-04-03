@@ -107,7 +107,7 @@ public class HistoryEndpointsTests
         };
 
         _mastodonServiceMock.Setup(x => x.GetTaggedPostsAsync(It.IsAny<string>(), It.IsAny<string>(), "123", "nowplaying", It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-            .ReturnsAsync(posts);
+            .Returns(ToAsyncEnumerable(posts));
 
         // Act
         var result = await CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now.AddDays(-1), Until = DateTime.Now, Tag = "nowplaying" });
@@ -122,6 +122,24 @@ public class HistoryEndpointsTests
         Assert.Equal("img1.jpg", okResult.Value[0].ImageUrl);
         Assert.Equal("2", okResult.Value[1].PostId);
         Assert.Equal("img2.jpg", okResult.Value[1].ImageUrl);
+    }
+
+    private static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(IEnumerable<T> items)
+    {
+        foreach (var item in items)
+        {
+            yield return item;
+            await Task.Yield();
+        }
+    }
+
+    private static async IAsyncEnumerable<T> ThrowAsync<T>(Exception ex)
+    {
+        await Task.Yield();
+        throw ex;
+#pragma warning disable CS0162 // Unreachable code detected
+        yield break;
+#pragma warning restore CS0162
     }
 
     /// <summary>
@@ -159,7 +177,7 @@ public class HistoryEndpointsTests
         };
 
         _mastodonServiceMock.Setup(x => x.GetTaggedPostsAsync(It.IsAny<string>(), It.IsAny<string>(), "123", "nowplaying", It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-            .ReturnsAsync(posts);
+            .Returns(ToAsyncEnumerable(posts));
 
         // Act
         var result = await CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now.AddDays(-1), Until = DateTime.Now, Tag = "nowplaying" });
@@ -185,7 +203,7 @@ public class HistoryEndpointsTests
             .ReturnsAsync("123");
 
         _mastodonServiceMock.Setup(x => x.GetTaggedPostsAsync(It.IsAny<string>(), It.IsAny<string>(), "123", "nowplaying", It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-            .ThrowsAsync(new HttpRequestException("Search failed"));
+            .Returns(ThrowAsync<StatusMastodonResponse>(new HttpRequestException("Search failed")));
 
         // Act
         var result = await CreateEndpoints().Search(_context, new HistorySearchRequest { Since = DateTime.Now.AddDays(-1), Until = DateTime.Now, Tag = "nowplaying" });

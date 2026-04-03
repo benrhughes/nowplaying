@@ -49,4 +49,12 @@ public class AppConfig
     [Range(1, 300)]
     [ConfigurationKeyName("HTTP_TIMEOUT_SECONDS")]
     public int HttpTimeoutSeconds { get; set; } = 60;
+
+    /// <summary>
+    /// Gets or sets the maximum size of the ImageSharp memory pool in megabytes.
+    /// A value of 0 means no limit (not recommended for small services).
+    /// </summary>
+    [Range(0, 1024)]
+    [ConfigurationKeyName("IMAGESHARP_POOL_LIMIT_MB")]
+    public int ImageSharpPoolLimitMb { get; set; } = 64;
 }

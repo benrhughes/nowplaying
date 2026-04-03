@@ -7,86 +7,136 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Drawing.Processing;
+using NowPlaying.Models;
 
 /// <summary>
 /// Implementation of <see cref="IImageService"/> using a typed <see cref="HttpClient"/>.
 /// </summary>
-/// <param name="httpClient">The HTTP client.</param>
-/// <param name="logger">The logger.</param>
-public class ImageService(HttpClient httpClient, ILogger<ImageService> logger)
-    : IImageService
+public class ImageService : IImageService
 {
+    private static readonly object _configLock = new();
+    private static Configuration? _sharedConfig;
+
+    private readonly HttpClient _httpClient;
+    private readonly ILogger<ImageService> _logger;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ImageService"/> class.
+    /// </summary>
+    /// <param name="httpClient">The HTTP client.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="appConfig">The application configuration.</param>
+    public ImageService(HttpClient httpClient, ILogger<ImageService> logger, AppConfig appConfig)
+    {
+        _httpClient = httpClient;
+        _logger = logger;
+
+        if (_sharedConfig == null)
+        {
+            lock (_configLock)
+            {
+                if (_sharedConfig == null)
+                {
+                    // Create a custom ImageSharp configuration with a capped memory pool.
+                    // This prevents the Working Set from growing indefinitely by limiting how much
+                    // memory the allocator can retain before returning it to the system.
+                    var config = Configuration.Default.Clone();
+
+                    if (appConfig.ImageSharpPoolLimitMb > 0)
+                    {
+                        // Configure the isolated memory allocator with the specified limit.
+                        // ImageSharp 3.x uses the factory pattern for memory allocators.
+                        config.MemoryAllocator = SixLabors.ImageSharp.Memory.MemoryAllocator.Create(new SixLabors.ImageSharp.Memory.MemoryAllocatorOptions
+                        {
+                            // Limits the total memory the allocator can retain in its internal pool.
+                            MaximumPoolSizeMegabytes = appConfig.ImageSharpPoolLimitMb,
+
+                            // Limits the maximum size of any single allocation to prevent OOM.
+                            AllocationLimitMegabytes = appConfig.ImageSharpPoolLimitMb
+                        });
+                    }
+
+                    _sharedConfig = config;
+                }
+            }
+        }
+    }
+
     /// <inheritdoc/>
     public async Task<byte[]> DownloadImageAsync(string url)
     {
         await ValidateUrlAsync(url);
-        return await httpClient.GetByteArrayAsync(url);
+        return await _httpClient.GetByteArrayAsync(url);
     }
 
     /// <inheritdoc/>
     public async Task<byte[]> GenerateCompositeAsync(IEnumerable<string> imageUrls)
     {
+        var config = _sharedConfig ?? Configuration.Default;
         var urls = imageUrls.ToList();
         if (urls.Count == 0)
         {
             return Array.Empty<byte>();
         }
 
-        var images = new Image?[urls.Count];
-        var tasks = new List<Task>();
+        const int CellSize = 300;
+        int count = urls.Count;
+        int cols = (int)Math.Ceiling(Math.Sqrt(count));
+        int rows = (int)Math.Ceiling((double)count / cols);
+
+        // Use the custom configuration to isolate memory pooling
+        using var canvas = new Image<Rgba32>(config, cols * CellSize, rows * CellSize);
+        canvas.Mutate(ctx => ctx.Fill(Color.Black));
+
+        using var semaphore = new SemaphoreSlim(1, 1); // To synchronize drawing on the canvas
+        int successCount = 0;
 
         try
         {
-            for (int i = 0; i < urls.Count; i++)
+            // Limit concurrency to reduce peak memory pressure from decoding large images
+            await Parallel.ForAsync(0, count, new ParallelOptions { MaxDegreeOfParallelism = 2 }, async (i, ct) =>
             {
-                var index = i;
-                var url = urls[i];
-                tasks.Add(Task.Run(async () =>
+                try
                 {
+                    await ValidateUrlAsync(urls[i]);
+                    using var response = await _httpClient.GetAsync(urls[i], HttpCompletionOption.ResponseHeadersRead, ct);
+                    response.EnsureSuccessStatusCode();
+
+                    using var stream = await response.Content.ReadAsStreamAsync(ct);
+
+                    // Always use the custom configuration when loading images
+                    var decoderOptions = new SixLabors.ImageSharp.Formats.DecoderOptions { Configuration = config };
+                    using var img = await Image.LoadAsync<Rgba32>(decoderOptions, stream, ct);
+
+                    img.Mutate(x => x.Resize(new ResizeOptions
+                    {
+                        Size = new Size(CellSize, CellSize),
+                        Mode = ResizeMode.Crop,
+                    }));
+
+                    int x = (i % cols) * CellSize;
+                    int y = (i / cols) * CellSize;
+
+                    await semaphore.WaitAsync(ct);
                     try
                     {
-                        var data = await DownloadImageAsync(url);
-                        images[index] = Image.Load(data);
+                        canvas.Mutate(ctx => ctx.DrawImage(img, new Point(x, y), 1f));
+                        Interlocked.Increment(ref successCount);
                     }
-                    catch (Exception ex)
+                    finally
                     {
-                        logger.LogWarning(ex, "Failed to download or load image from {url}", url);
+                        semaphore.Release();
                     }
-                }));
-            }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to download or load image from {url}", urls[i]);
+                }
+            });
 
-            await Task.WhenAll(tasks);
-
-            var validImages = images.Where(img => img != null).Cast<Image>().ToList();
-
-            if (validImages.Count == 0)
+            if (successCount == 0)
             {
                 return Array.Empty<byte>();
-            }
-
-            const int CellSize = 300;
-            int count = validImages.Count;
-
-            // Calculate grid size (aim for square-ish)
-            int cols = (int)Math.Ceiling(Math.Sqrt(count));
-            int rows = (int)Math.Ceiling((double)count / cols);
-
-            using var canvas = new Image<Rgba32>(cols * CellSize, rows * CellSize);
-            canvas.Mutate(ctx => ctx.Fill(Color.Black));
-
-            for (int i = 0; i < count; i++)
-            {
-                var img = validImages[i];
-                img.Mutate(x => x.Resize(new ResizeOptions
-                {
-                    Size = new Size(CellSize, CellSize),
-                    Mode = ResizeMode.Crop,
-                }));
-
-                int x = (i % cols) * CellSize;
-                int y = (i / cols) * CellSize;
-
-                canvas.Mutate(ctx => ctx.DrawImage(img, new Point(x, y), 1f));
             }
 
             using var ms = new MemoryStream();
@@ -95,10 +145,9 @@ public class ImageService(HttpClient httpClient, ILogger<ImageService> logger)
         }
         finally
         {
-            foreach (var img in images)
-            {
-                img?.Dispose();
-            }
+            // Explicitly release retained resources from ImageSharp's pool
+            // to keep Working Set growth under control, as expected by integration tests.
+            config.MemoryAllocator.ReleaseRetainedResources();
         }
     }
 

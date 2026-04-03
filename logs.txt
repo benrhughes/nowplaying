@@ -1,0 +1,30 @@
+2026-04-03 16:43:48.531 |       Memory before Search: GC=2740784 bytes, WS=121262080 bytes, Gen0=2, Gen1=1, Gen2=0
+2026-04-03 16:43:50.926 |       Memory after Search (success): GC=3386960 bytes, WS=126828544 bytes, Gen0=2, Gen1=1, Gen2=0
+2026-04-03 16:43:50.957 |       Memory before Composite: GC=3571384 bytes, WS=126918656 bytes
+2026-04-03 16:43:53.034 |       Memory after cache Store: GC=19653416 bytes, WS=156786688 bytes, Gen0=6, Gen1=5, Gen2=4
+2026-04-03 16:43:53.035 |       Memory after Composite (success): GC=19711744 bytes, WS=156844032 bytes
+2026-04-03 16:44:04.503 |       Memory before Search: GC=20170432 bytes, WS=158330880 bytes, Gen0=6, Gen1=5, Gen2=4
+2026-04-03 16:44:08.399 |       Memory after Search (success): GC=18890320 bytes, WS=153047040 bytes, Gen0=7, Gen1=6, Gen2=5
+2026-04-03 16:44:08.433 |       Memory before Composite: GC=18987288 bytes, WS=153092096 bytes
+2026-04-03 16:44:13.693 |       Memory after cache Store: GC=28396576 bytes, WS=199872512 bytes, Gen0=9, Gen1=8, Gen2=7
+2026-04-03 16:44:13.693 |       Memory after Composite (success): GC=28445048 bytes, WS=199872512 bytes
+2026-04-03 16:44:22.116 |       Memory before Search: GC=29758064 bytes, WS=201064448 bytes, Gen0=9, Gen1=8, Gen2=7
+2026-04-03 16:44:28.473 |       Memory after Search (success): GC=31367192 bytes, WS=201523200 bytes, Gen0=9, Gen1=8, Gen2=7
+2026-04-03 16:44:28.505 |       Memory before Composite: GC=31474104 bytes, WS=201535488 bytes
+2026-04-03 16:44:38.900 |       Memory after cache Store: GC=37794120 bytes, WS=274907136 bytes, Gen0=11, Gen1=10, Gen2=9
+2026-04-03 16:44:38.900 |       Memory after Composite (success): GC=37855240 bytes, WS=274907136 bytes
+2026-04-03 16:44:48.722 |       Memory before Search: GC=39402968 bytes, WS=276238336 bytes, Gen0=11, Gen1=10, Gen2=9
+2026-04-03 16:44:54.582 |       Memory after Search (success): GC=40809632 bytes, WS=276889600 bytes, Gen0=11, Gen1=10, Gen2=9
+2026-04-03 16:44:54.607 |       Memory before Composite: GC=40889944 bytes, WS=276893696 bytes
+2026-04-03 16:44:56.412 |       Memory after cache Store: GC=44330960 bytes, WS=287305728 bytes, Gen0=11, Gen1=10, Gen2=9
+2026-04-03 16:44:56.412 |       Memory after Composite (success): GC=44376112 bytes, WS=287305728 bytes
+2026-04-03 16:45:03.286 |       Memory before Search: GC=44563992 bytes, WS=287481856 bytes, Gen0=11, Gen1=10, Gen2=9
+2026-04-03 16:45:05.491 |       Memory after Search (success): GC=45014744 bytes, WS=287862784 bytes, Gen0=11, Gen1=10, Gen2=9
+2026-04-03 16:45:05.508 |       Memory before Composite: GC=45088720 bytes, WS=287858688 bytes
+2026-04-03 16:45:06.928 |       Memory after cache Store: GC=43933392 bytes, WS=298274816 bytes, Gen0=12, Gen1=10, Gen2=9
+2026-04-03 16:45:06.929 |       Memory after Composite (success): GC=43982736 bytes, WS=298274816 bytes
+2026-04-03 16:45:15.399 |       Memory before Search: GC=44072464 bytes, WS=298299392 bytes, Gen0=12, Gen1=10, Gen2=9
+2026-04-03 16:45:23.165 |       Memory after Search (success): GC=46024432 bytes, WS=299462656 bytes, Gen0=12, Gen1=10, Gen2=9
+2026-04-03 16:45:23.180 |       Memory before Composite: GC=46131000 bytes, WS=299466752 bytes
+2026-04-03 16:45:34.054 |       Memory after cache Store: GC=47634040 bytes, WS=284958720 bytes, Gen0=14, Gen1=12, Gen2=11
+2026-04-03 16:45:34.054 |       Memory after Composite (success): GC=47682856 bytes, WS=284958720 bytes

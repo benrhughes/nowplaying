@@ -336,7 +336,11 @@ public class MastodonServiceTests
         var service = CreateService(JsonSerializer.Serialize(responseData));
 
         // Act
-        var posts = await service.GetTaggedPostsAsync(_instance, "token", "userId", "tag", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow);
+        var posts = new List<NowPlaying.Models.StatusMastodonResponse>();
+        await foreach (var post in service.GetTaggedPostsAsync(_instance, "token", "userId", "tag", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow))
+        {
+            posts.Add(post);
+        }
 
         // Assert
         Assert.Single(posts);
@@ -354,8 +358,13 @@ public class MastodonServiceTests
         var service = CreateService("Error", System.Net.HttpStatusCode.BadRequest);
 
         // Act & Assert
-        await Assert.ThrowsAsync<HttpRequestException>(() =>
-            service.GetTaggedPostsAsync(_instance, "token", "userId", "tag", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow));
+        await Assert.ThrowsAsync<HttpRequestException>(async () =>
+        {
+            await foreach (var dummy in service.GetTaggedPostsAsync(_instance, "token", "userId", "tag", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow))
+            {
+                Assert.NotNull(dummy);
+            }
+        });
     }
 
     /// <summary>

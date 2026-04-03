@@ -18,7 +18,7 @@ public class GlobalExceptionHandler : IExceptionHandler
     /// <param name="logger">The logger.</param>
     public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
     {
-        this._logger = logger;
+        _logger = logger;
     }
 
     /// <inheritdoc/>

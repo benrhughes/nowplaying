@@ -22,7 +22,7 @@ public static class HttpContentExtensions
     /// <returns>The deserialized object.</returns>
     public static async Task<T?> ReadAsAsync<T>(this HttpContent content)
     {
-        var json = await content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<T>(json, _jsonOptions);
+        await using var stream = await content.ReadAsStreamAsync();
+        return await JsonSerializer.DeserializeAsync<T>(stream, _jsonOptions);
     }
 }

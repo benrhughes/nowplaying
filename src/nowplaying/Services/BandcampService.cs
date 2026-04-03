@@ -20,10 +20,10 @@ public class BandcampService(HttpClient httpClient, ILogger<BandcampService> log
 
         try
         {
-            var htmlContent = await httpClient.GetStringAsync(url);
+            using var stream = await httpClient.GetStreamAsync(url);
 
             var doc = new HtmlDocument();
-            doc.LoadHtml(htmlContent);
+            doc.Load(stream);
 
             var titleNode = doc.DocumentNode.SelectSingleNode("//meta[@property='og:title']");
             var imageNode = doc.DocumentNode.SelectSingleNode("//meta[@property='og:image']");

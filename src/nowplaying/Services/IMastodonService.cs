@@ -64,6 +64,6 @@ public interface IMastodonService
     /// <param name="tag">The tag to filter by.</param>
     /// <param name="since">The start of the date range.</param>
     /// <param name="until">The end of the date range.</param>
-    /// <returns>A collection of matching posts.</returns>
-    Task<IEnumerable<StatusMastodonResponse>> GetTaggedPostsAsync(string instance, string accessToken, string userId, string tag, DateTime since, DateTime until);
+    /// <returns>An async enumerable of matching posts.</returns>
+    IAsyncEnumerable<StatusMastodonResponse> GetTaggedPostsAsync(string instance, string accessToken, string userId, string tag, DateTime since, DateTime until);
 }

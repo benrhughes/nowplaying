@@ -59,8 +59,7 @@ public static class ServiceCollectionExtensions
         services.AddExceptionHandler<Middleware.GlobalExceptionHandler>();
         services.AddProblemDetails();
 
-        // Register memory cache and composite image cache for temporary storage
-        services.AddMemoryCache();
+        // Register composite image cache for temporary storage
         services.AddSingleton<ICompositeImageCache, CompositeImageCache>();
 
         // Register endpoint classes for DI

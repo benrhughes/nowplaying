@@ -1,7 +1,6 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
 namespace NowPlaying.Tests.Services;
 
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NowPlaying.Services;
@@ -10,9 +9,8 @@ using Xunit;
 /// <summary>
 /// Tests for the composite image cache service.
 /// </summary>
-public class CompositeImageCacheTests
+public class CompositeImageCacheTests : IDisposable
 {
-    private readonly IMemoryCache _memoryCache;
     private readonly Mock<ILogger<CompositeImageCache>> _loggerMock;
     private readonly CompositeImageCache _cache;
 
@@ -21,9 +19,14 @@ public class CompositeImageCacheTests
     /// </summary>
     public CompositeImageCacheTests()
     {
-        _memoryCache = new MemoryCache(new MemoryCacheOptions());
         _loggerMock = new Mock<ILogger<CompositeImageCache>>();
-        _cache = new CompositeImageCache(_memoryCache, _loggerMock.Object);
+        _cache = new CompositeImageCache(_loggerMock.Object);
+    }
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        _cache.Dispose();
     }
 
     /// <summary>
@@ -121,10 +124,8 @@ public class CompositeImageCacheTests
         var imageData = new byte[] { 1, 2, 3 };
 
         // Create a very short expiration time for testing
-        using (var shortLivedCache = new MemoryCache(new MemoryCacheOptions()))
+        using (var shortCache = new CompositeImageCache(_loggerMock.Object))
         {
-            var shortCache = new CompositeImageCache(shortLivedCache, _loggerMock.Object);
-
             // Act - Store with a very short TTL by mimicking what the cache does
             var cacheId = shortCache.Store(imageData);
 

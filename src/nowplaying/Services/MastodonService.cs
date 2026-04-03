@@ -23,7 +23,7 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
             scopes = AppConfig.OAuthScopes
         };
 
-        var response = await httpClient.PostAsJsonAsync($"{instance}/api/v1/apps", registerData);
+        using var response = await httpClient.PostAsJsonAsync($"{instance}/api/v1/apps", registerData);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -57,8 +57,8 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
             { "code", code },
         };
 
-        var content = new FormUrlEncodedContent(parameters);
-        var response = await httpClient.PostAsync($"{instance}/oauth/token", content);
+        using var content = new FormUrlEncodedContent(parameters);
+        using var response = await httpClient.PostAsync($"{instance}/oauth/token", content);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -79,10 +79,10 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
     {
         instance = instance.NormalizeInstance();
         accessToken = accessToken?.Trim() ?? throw new ArgumentException("Access token cannot be null or empty", nameof(accessToken));
-        var request = new HttpRequestMessage(HttpMethod.Get, $"{instance}/api/v1/accounts/verify_credentials");
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{instance}/api/v1/accounts/verify_credentials");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-        var response = await httpClient.SendAsync(request);
+        using var response = await httpClient.SendAsync(request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -106,7 +106,7 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
             throw new ArgumentException($"Alt text exceeds the 1500 character limit (current length: {altText.Length})", nameof(altText));
         }
 
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{instance}/api/v1/media");
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{instance}/api/v1/media");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
         using (var form = new MultipartFormDataContent())
@@ -118,7 +118,7 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
             }
 
             request.Content = form;
-            var response = await httpClient.SendAsync(request);
+            using var response = await httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -140,7 +140,7 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
     {
         instance = instance.NormalizeInstance();
         accessToken = accessToken?.Trim() ?? throw new ArgumentException("Access token cannot be null or empty", nameof(accessToken));
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{instance}/api/v1/statuses");
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{instance}/api/v1/statuses");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
         var statusRequest = new
@@ -151,7 +151,7 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
         };
 
         request.Content = JsonContent.Create(statusRequest);
-        var response = await httpClient.SendAsync(request);
+        using var response = await httpClient.SendAsync(request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -170,11 +170,10 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<StatusMastodonResponse>> GetTaggedPostsAsync(string instance, string accessToken, string userId, string tag, DateTime since, DateTime until)
+    public async IAsyncEnumerable<StatusMastodonResponse> GetTaggedPostsAsync(string instance, string accessToken, string userId, string tag, DateTime since, DateTime until)
     {
         instance = instance.NormalizeInstance();
         accessToken = accessToken?.Trim() ?? throw new ArgumentException("Access token cannot be null or empty", nameof(accessToken));
-        var statuses = new List<StatusMastodonResponse>();
         string? maxId = null;
         bool hasMore = true;
 
@@ -190,10 +189,10 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
                 url += $"&max_id={maxId}";
             }
 
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await httpClient.SendAsync(request);
+            using var response = await httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -221,7 +220,7 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
                     // Only include posts within the date range
                     if (status.CreatedAt.HasValue && status.CreatedAt.Value.DateTime <= until)
                     {
-                        statuses.Add(status);
+                        yield return status;
                     }
 
                     maxId = status.id;
@@ -234,7 +233,5 @@ public class MastodonService(HttpClient httpClient, ILogger<MastodonService> log
                 }
             }
         }
-
-        return statuses;
     }
 }
