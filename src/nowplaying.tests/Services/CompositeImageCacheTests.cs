@@ -20,7 +20,8 @@ public class CompositeImageCacheTests : IDisposable
     public CompositeImageCacheTests()
     {
         _loggerMock = new Mock<ILogger<CompositeImageCache>>();
-        _cache = new CompositeImageCache(_loggerMock.Object);
+        var appConfig = new NowPlaying.Models.AppConfig();
+        _cache = new CompositeImageCache(_loggerMock.Object, appConfig);
     }
 
     /// <inheritdoc/>
@@ -124,7 +125,8 @@ public class CompositeImageCacheTests : IDisposable
         var imageData = new byte[] { 1, 2, 3 };
 
         // Create a very short expiration time for testing
-        using (var shortCache = new CompositeImageCache(_loggerMock.Object))
+        var appConfig = new NowPlaying.Models.AppConfig { CacheExpirationMinutes = 1 };
+        using (var shortCache = new CompositeImageCache(_loggerMock.Object, appConfig))
         {
             // Act - Store with a very short TTL by mimicking what the cache does
             var cacheId = shortCache.Store(imageData);

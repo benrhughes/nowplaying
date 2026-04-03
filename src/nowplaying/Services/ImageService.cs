@@ -8,6 +8,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using NowPlaying.Models;
+using SixLabors.ImageSharp.Memory;
 
 /// <summary>
 /// Implementation of <see cref="IImageService"/> using a typed <see cref="HttpClient"/>.
@@ -44,14 +45,9 @@ public class ImageService : IImageService
 
                     if (appConfig.ImageSharpPoolLimitMb > 0)
                     {
-                        // Configure the isolated memory allocator with the specified limit.
-                        // ImageSharp 3.x uses the factory pattern for memory allocators.
-                        config.MemoryAllocator = SixLabors.ImageSharp.Memory.MemoryAllocator.Create(new SixLabors.ImageSharp.Memory.MemoryAllocatorOptions
+                        config.MemoryAllocator = MemoryAllocator.Create(new MemoryAllocatorOptions
                         {
-                            // Limits the total memory the allocator can retain in its internal pool.
                             MaximumPoolSizeMegabytes = appConfig.ImageSharpPoolLimitMb,
-
-                            // Limits the maximum size of any single allocation to prevent OOM.
                             AllocationLimitMegabytes = appConfig.ImageSharpPoolLimitMb
                         });
                     }
@@ -94,7 +90,7 @@ public class ImageService : IImageService
         try
         {
             // Limit concurrency to reduce peak memory pressure from decoding large images
-            await Parallel.ForAsync(0, count, new ParallelOptions { MaxDegreeOfParallelism = 2 }, async (i, ct) =>
+            await Parallel.ForAsync(0, count, new ParallelOptions { MaxDegreeOfParallelism = 4 }, async (i, ct) =>
             {
                 try
                 {
@@ -187,43 +183,25 @@ public class ImageService : IImageService
 
     private static bool IsPrivateIp(IPAddress ip)
     {
+        // Handle IPv4-mapped IPv6 addresses by mapping them back to IPv4
+        if (ip.IsIPv4MappedToIPv6)
+        {
+            ip = ip.MapToIPv4();
+        }
+
         if (ip.AddressFamily == AddressFamily.InterNetwork)
         {
             byte[] bytes = ip.GetAddressBytes();
-
-            // 10.0.0.0/8
-            if (bytes[0] == 10)
+            return bytes[0] switch
             {
-                return true;
-            }
-
-            // 172.16.0.0/12
-            if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
-            {
-                return true;
-            }
-
-            // 192.168.0.0/16
-            if (bytes[0] == 192 && bytes[1] == 168)
-            {
-                return true;
-            }
-
-            // 169.254.0.0/16 (Link-local)
-            if (bytes[0] == 169 && bytes[1] == 254)
-            {
-                return true;
-            }
-        }
-        else if (ip.AddressFamily == AddressFamily.InterNetworkV6)
-        {
-            // Unique local address (fc00::/7)
-            if (ip.IsIPv6SiteLocal || ip.IsIPv6LinkLocal || (ip.GetAddressBytes()[0] & 0xFE) == 0xFC)
-            {
-                return true;
-            }
+                10 => true, // 10.0.0.0/8
+                172 => bytes[1] >= 16 && bytes[1] <= 31, // 172.16.0.0/12
+                192 => bytes[1] == 168, // 192.168.0.0/16
+                169 => bytes[1] == 254, // 169.254.0.0/16 (Link-local)
+                _ => false
+            };
         }
 
-        return false;
+        return ip.IsIPv6LinkLocal || ip.IsIPv6SiteLocal || ip.IsIPv6UniqueLocal;
     }
 }

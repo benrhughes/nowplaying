@@ -84,13 +84,13 @@ public class MemoryLeakTests
         var imageLoggerMock = new Mock<ILogger<ImageService>>();
         var cacheLoggerMock = new Mock<ILogger<CompositeImageCache>>();
 
-        var cache = new CompositeImageCache(cacheLoggerMock.Object);
+        var appConfig = new AppConfig();
+        var cache = new CompositeImageCache(cacheLoggerMock.Object, appConfig);
         var random = new Random();
 
         // Create a custom handler that returns images of varying sizes to stress memory management
         var multiSizeHandler = new MultiSizeImageHandler();
         var client = new HttpClient(multiSizeHandler);
-        var appConfig = new AppConfig();
         var imageService = new ImageService(client, imageLoggerMock.Object, appConfig);
 
         var urls = Enumerable.Range(0, 16).Select(i => $"http://example.com/{i}.jpg").ToList();

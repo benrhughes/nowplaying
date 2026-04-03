@@ -31,14 +31,6 @@ public class HistoryEndpoints(
         var instance = context.User.GetInstance() ?? throw new UnauthorizedAccessException();
         var accessToken = context.User.GetAccessToken() ?? throw new UnauthorizedAccessException();
 
-        logger.LogInformation(
-            "Memory before Search: GC={GC} bytes, WS={WS} bytes, Gen0={Gen0}, Gen1={Gen1}, Gen2={Gen2}",
-            GC.GetTotalMemory(false),
-            System.Diagnostics.Process.GetCurrentProcess().WorkingSet64,
-            GC.CollectionCount(0),
-            GC.CollectionCount(1),
-            GC.CollectionCount(2));
-
         try
         {
             var userId = await mastodonService.VerifyCredentialsAsync(instance, accessToken);
@@ -60,14 +52,6 @@ public class HistoryEndpoints(
 
             // Reverse to show most recent first (or whatever the original logic was)
             images.Reverse();
-
-            logger.LogInformation(
-                "Memory after Search (success): GC={GC} bytes, WS={WS} bytes, Gen0={Gen0}, Gen1={Gen1}, Gen2={Gen2}",
-                GC.GetTotalMemory(false),
-                System.Diagnostics.Process.GetCurrentProcess().WorkingSet64,
-                GC.CollectionCount(0),
-                GC.CollectionCount(1),
-                GC.CollectionCount(2));
 
             return Results.Ok(images);
         }
@@ -101,14 +85,10 @@ public class HistoryEndpoints(
             return Results.BadRequest(new ErrorResponse("No images provided"));
         }
 
-        logger.LogInformation("Memory before Composite: GC={GC} bytes, WS={WS} bytes", GC.GetTotalMemory(false), System.Diagnostics.Process.GetCurrentProcess().WorkingSet64);
-
         try
         {
             var imageBytes = await imageService.GenerateCompositeAsync(request.ImageUrls);
             var cacheId = compositeImageCache.Store(imageBytes);
-
-            logger.LogInformation("Memory after Composite (success): GC={GC} bytes, WS={WS} bytes", GC.GetTotalMemory(false), System.Diagnostics.Process.GetCurrentProcess().WorkingSet64);
 
             return Results.Ok(new CompositeResponse(cacheId, "image/jpeg"));
         }

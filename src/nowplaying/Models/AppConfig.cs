@@ -57,4 +57,18 @@ public class AppConfig
     [Range(0, 1024)]
     [ConfigurationKeyName("IMAGESHARP_POOL_LIMIT_MB")]
     public int ImageSharpPoolLimitMb { get; set; } = 64;
+
+    /// <summary>
+    /// Gets or sets the composite image cache expiration in minutes.
+    /// </summary>
+    [Range(1, 1440)]
+    [ConfigurationKeyName("CACHE_EXPIRATION_MINUTES")]
+    public int CacheExpirationMinutes { get; set; } = 1;
+
+    /// <summary>
+    /// Gets or sets the composite image cache size limit in megabytes.
+    /// </summary>
+    [Range(1, 1024)]
+    [ConfigurationKeyName("CACHE_SIZE_LIMIT_MB")]
+    public int CacheSizeLimitMb { get; set; } = 50;
 }
