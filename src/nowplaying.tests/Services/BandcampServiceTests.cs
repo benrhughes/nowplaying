@@ -57,6 +57,38 @@ public class BandcampServiceTests
     }
 
     /// <summary>
+    /// Verifies that ScrapeAsync returns correctly parsed data for a valid Bandcamp URL.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+    [Fact]
+    public async Task ScrapeAsync_WithValidUrl_AndEncodedContent_ReturnsScrapedData()
+    {
+        // Arrange
+        var url = "https://example.bandcamp.com/album/test";
+        var htmlContent = """
+            <html>
+            <head>
+                <meta property="og:title" content="Test Album – Test &#38; Artist" />
+                <meta property="og:image" content="https://example.com/image.jpg" />
+                <meta property="og:description" content="A test album description" />
+            </head>
+            </html>
+            """;
+        var service = CreateService(htmlContent);
+
+        // Act
+        var result = await service.ScrapeAsync(url);
+
+        // Assert
+        Assert.Equal("Test Album – Test & Artist", result.Title);
+        Assert.Equal("Test & Artist", result.Artist);
+        Assert.Equal("Test Album", result.Album);
+        Assert.Equal("https://example.com/image.jpg", result.Image);
+        Assert.Equal("A test album description", result.Description);
+        Assert.Equal(url, result.Url);
+    }
+
+    /// <summary>
     /// Verifies that artist and album are correctly parsed when using the "by" pattern.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>

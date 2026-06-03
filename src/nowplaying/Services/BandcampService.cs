@@ -1,4 +1,5 @@
 // Copyright (c) Ben Hughes. SPDX-License-Identifier: AGPL-3.0-or-later
+using System.Net;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 using NowPlaying.Models;
@@ -39,7 +40,7 @@ public class BandcampService(HttpClient httpClient, ILogger<BandcampService> log
             logger.LogDebug("Scraped info - Artist: {Artist}, Album: {Album}", artist, album);
 
             return new ScrapeResponse(
-                Title: title,
+                Title: album != string.Empty && artist != string.Empty ? $"{album} – {artist}" : title,
                 Artist: artist,
                 Album: album,
                 Image: image,
@@ -66,7 +67,7 @@ public class BandcampService(HttpClient httpClient, ILogger<BandcampService> log
         {
             var album = match.Groups[1].Value.Trim().TrimEnd(',').Trim();
             var artist = match.Groups[2].Value.Trim();
-            return (artist, album);
+            return (WebUtility.HtmlDecode(artist), WebUtility.HtmlDecode(album));
         }
 
         // Pattern: "Album by Artist"
@@ -75,7 +76,7 @@ public class BandcampService(HttpClient httpClient, ILogger<BandcampService> log
         {
             var album = byMatch.Groups[1].Value.Trim().TrimEnd(',').Trim();
             var artist = byMatch.Groups[2].Value.Trim();
-            return (artist, album);
+            return (WebUtility.HtmlDecode(artist), WebUtility.HtmlDecode(album));
         }
 
         return (string.Empty, string.Empty);
