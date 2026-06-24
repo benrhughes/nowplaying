@@ -29,10 +29,6 @@ public class PostingEndpoints(
         ScrapeRequest request)
     {
         var host = new Uri(request.Url).Host;
-        if (!host.EndsWith(".bandcamp.com") && host != "bandcamp.com")
-        {
-            return Results.BadRequest(new ErrorResponse("Only Bandcamp URLs are supported"));
-        }
 
         try
         {

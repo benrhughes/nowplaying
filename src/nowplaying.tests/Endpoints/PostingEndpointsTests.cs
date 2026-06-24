@@ -134,24 +134,6 @@ public class PostingEndpointsTests
     }
 
     /// <summary>
-    /// Verifies that Scrape returns a bad request for non-Bandcamp URLs.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task Scrape_WithNonBandcampUrl_ReturnsBadRequest()
-    {
-        // Arrange
-        var request = new ScrapeRequest { Url = "https://spotify.com/album/test" };
-
-        // Act
-        var result = await CreateEndpoints().Scrape(_httpContextMock.Object, request);
-
-        // Assert
-        var badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
-        Assert.Equal("Only Bandcamp URLs are supported", badRequest.Value!.Error);
-    }
-
-    /// <summary>
     /// Verifies that Scrape returns an internal server error on general exceptions.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
